@@ -1,5 +1,5 @@
 #!/usr/bin/env bb
-; vim: ft=clojure foldmethod=syntax
+; vim: ft=clojure
 (require '[hiccup2.core :as hiccup])
 (require '[hiccup.util :refer [raw-string]])
 (require '[babashka.curl :as curl])
@@ -7,7 +7,7 @@
 ;;; util
 
 (defn render! [path doctype hiccup]
-  (let [path (str "." (str/replace path #"/$" "/index.html"))]
+  (let [path (str "public" (str/replace path #"/$" "/index.html"))]
     (io/make-parents path)
     (spit path (str doctype "\n" (hiccup/html hiccup)))))
 
@@ -40,6 +40,13 @@
 (def endash [:span (raw-string "&#8211;")])
 
 (def nbsp [:span (raw-string "&nbsp;")])
+
+(def recaptcha-disclosure
+  [:span "This site is protected by reCAPTCHA and the Google "
+   [:a.underline {:href "https://policies.google.com/privacy" :target "_blank"}
+    "Privacy Policy"] " and "
+   [:a.underline {:href "https://policies.google.com/terms" :target "_blank"}
+    "Terms of Service"] " apply."])
 
 (defn base-html
   [{{:site/keys [title description image url]} :site :keys [path]} & body]
@@ -74,7 +81,10 @@
     [:link {:href "/feed.xml",
             :title "Biff",
             :type "application/atom+xml",
-            :rel "alternate"}]]
+            :rel "alternate"}]
+    [:script {:src "https://www.google.com/recaptcha/api.js"
+              :async "async"
+              :defer "defer"}]]
    [:body
     {:style {:position "absolute"
              :width "100%"
@@ -148,23 +158,72 @@
                    :color "#4b5563"}}
      (format-date "d MMM yyyy" published-at)]]])
 
-(defn inline-subscribe-form []
-  (list
-    [:div.text-lg.italic.text-center "Subscribe to get future posts by email."]
-    [:div.h-5]
-    [:div.flex.justify-center
-     [:iframe
-      {:style {:margin 0
-               :border-radius "0px !important"
-               :background-color "transparent"
-               :height "52px"}
-       :scrolling "no",
-       :frameborder "0",
-       :data-test-id "beehiiv-embed",
-       :src
-       "https://embeds.beehiiv.com/154976bf-1f7b-4d0b-82f8-5c1c615f2bbd?slim=true"}]]))
+(def errors
+  {"invalid-email" "It looks like that email is invalid. Try a different one."
+   "recaptcha-failed" "reCAPTCHA check failed. Try again."
+   "unknown" "There was an unexpected error. Try again."})
 
-(defn post-page [{:keys [site post] :as opts}]
+(defn subscribe-form [{:keys [bg show-disclosure sitekey]}]
+  [:div.flex.flex-col.items-center.text-center.px-3
+   {:class (when (= bg :dark)
+             '[text-white
+               bg-primary])}
+   [:div.h-20]
+   [:div.font-bold.text-3xl.leading-none
+    "Biff: The Newsletter"]
+   [:div.h-5]
+   [:div "Project updates to help you Biff your next web app."]
+   [:div.h-5]
+   [:script (raw-string "function onSubscribe(token) { document.getElementById('recaptcha-form').submit(); }")]
+   [:form#recaptcha-form.w-full.max-w-md
+    {:action "/.netlify/functions/subscribe"
+     :method "POST"}
+    [:input {:type "hidden"
+             :name "href"
+             :_ "on load set my value to window.location.href"}]
+    [:input {:type "hidden"
+             :name "referrer"
+             :_ "on load set my value to document.referrer"}]
+    [:div.flex.flex-col.sm:flex-row.gap-2
+     [:input {:class '[rounded
+                       shadow
+                       border-gray-300
+                       focus:ring-0
+                       focus:ring-transparent
+                       focus:border-gray-300
+                       flex-grow
+                       text-black]
+              :type "email"
+              :name "email"
+              :placeholder "Enter your email"
+              :_ (str "on load "
+                      "make a URLSearchParams from window.location.search called p "
+                      "then set my value to p.get('email')")}]
+     [:button {:class '[bg-accent
+                        hover:bg-accent-dark
+                        text-white
+                        py-2
+                        px-4
+                        rounded
+                        shadow
+                        g-recaptcha]
+               :data-sitekey sitekey
+               :data-callback "onSubscribe"
+               :data-action "subscribe"
+               :type "submit"}
+      "Subscribe"]]
+    (for [[code explanation] errors]
+      [:div.text-red-600.hidden.text-left
+       {:_ (str "on load if window.location.search.includes('error="
+                code
+                "') remove .hidden from me")}
+       explanation])]
+   [:div.h-20]
+   (when show-disclosure
+     [:div.sm:text-center.text-sm.leading-snug.opacity-75.w-full.px-3.mb-3
+      recaptcha-disclosure])])
+
+(defn post-page [{:keys [site post account] :as opts}]
   (base-html
     (assoc opts :site (assoc site
                              :site/title (:post/title post)
@@ -172,14 +231,10 @@
                              :site/image (or (:post/image post) (:site/image site))))
     navbar
     [:div.mx-auto.p-3.text-lg.flex-grow.w-full
-     {:class (if ((set (:post/tags post)) "video")
+     {:class (if ((:post/tags post) "video")
                "max-w-screen-lg"
                "max-w-screen-sm")}
      [:div.h-5]
-     (when-not ((set (:post/tags post)) "video")
-       (list
-         (inline-subscribe-form)
-         [:div.h-8]))
      [:h1.font-bold.leading-tight.text-gray-900.text-4xl
       (:post/title post)]
      [:div.h-3]
@@ -187,17 +242,10 @@
      [:div.h-5]
      [:div.post-content (raw-string (:post/html post))]
      [:div.h-5]]
-    [:iframe
-     {:style
-      {:style {:border-radius "4px"
-               :margin 0
-               :background-color "transparent"}},
-      :scrolling "no",
-      :frameborder "0",
-      :height "320",
-      :width "100%",
-      :data-test-id "beehiiv-embed",
-      :src "https://embeds.beehiiv.com/56ef8934-f4a0-460b-ac0c-c29f6370e15f"}]))
+    (subscribe-form {:bg :dark :sitekey (:recaptcha/site account)})
+    [:div.bg-primary
+     [:div.sm:text-center.text-sm.leading-snug.w-full.px-3.pb-3.text-white.opacity-75
+      recaptcha-disclosure]]))
 
 (def sponsors
   [{:img "https://avatars.githubusercontent.com/u/19023?v=4"
@@ -209,28 +257,26 @@
    {:img "https://avatars.githubusercontent.com/u/9289130?v=4"
     :url "https://github.com/wuuei"}])
 
+(defn subscribed-page [opts]
+  (base-html
+    (assoc-in opts [:site :site/title] "You're subscribed to Biff: The Newsletter")
+    navbar
+    [:div.max-w-screen-lg.mx-auto.p-3.w-full
+     [:h1.font-bold.text-2xl "You're subscribed"]
+     [:div "Check your inbox for a welcome email."]]))
+
 (defn newsletter-page [{:keys [posts] :as opts}]
   (base-html
     (assoc-in opts [:site :site/title] "Biff: The Newsletter")
     navbar
-    [:iframe
-     {:style
-      {:style {:border-radius "4px"
-               :margin 0
-               :background-color "transparent"}},
-      :scrolling "no",
-      :frameborder "0",
-      :height "320",
-      :width "100%",
-      :data-test-id "beehiiv-embed",
-      :src "https://embeds.beehiiv.com/154976bf-1f7b-4d0b-82f8-5c1c615f2bbd"}]
+    (subscribe-form {:bg :light})
     [:div.bg-gray-200.h-full.flex-grow
      [:div.h-10]
      [:div.text-center.text-2xl "Recent posts"]
      [:div.h-10]
      [:div.max-w-screen-sm.mx-auto.px-3
       (for [{:post/keys [title slug published-at description tags]} posts
-            :when (not ((set tags) "draft"))]
+            :when (not (tags "draft"))]
         [:a.block.mb-5.bg-white.rounded.p-3.hover:bg-gray-100.cursor-pointer
          {:href (str "/p/" slug "/")}
          [:div.text-sm.text-gray-800 (format-date "d MMM yyyy" published-at)]
@@ -238,9 +284,12 @@
          [:div.text-xl.font-bold title]
          [:div.h-1]
          [:div description]])]
-     [:div.h-10]]))
+     [:div.h-10]
+     [:div.sm:text-center.text-sm.leading-snug.opacity-75.w-full.px-3
+      recaptcha-disclosure]
+     [:div.h-3]]))
 
-(defn community-page [{:keys [posts] :as opts}]
+(defn community-page [opts]
   (base-html
     (assoc-in opts [:site :site/title] "Community | Biff")
     navbar
@@ -377,40 +426,64 @@
 (def pages
   {"/" landing-page
    "/newsletter/" newsletter-page
-   "/community/" community-page})
+   "/community/" community-page
+   "/subscribed/" subscribed-page})
 
-(defn get-sitemap [{:keys [root url]}]
-  (->> (curl/get (str url "/sitemap.txt"))
-       :body
-       str/split-lines
-       (map (fn [path]
-              (str root path " " url path "\n")))
-       (apply str)))
+(defn main [{:keys [db site-id account] :as opts}]
+  (let [site (get db site-id)
+        posts (->> (vals db)
+                   (map #(update % :post/tags set))
+                   (filter (fn [post]
+                             (and (= :post (:db/doc-type post))
+                                  (= :published (:post/status post))
+                                  ((:post/tags post) (:site/tag site)))))
+                   (sort-by :post/published-at #(compare %2 %1)))
+        welcome (->> posts
+                     (filter #((:post/tags %) "welcome"))
+                     first)
+        posts (->> posts
+                   (remove #((:post/tags %) "welcome")))
+        lst (->> (vals db)
+                 (map #(update % :list/tags set))
+                 (filter (fn [lst]
+                           (and (= :list (:db/doc-type lst))
+                                ((:list/tags lst) (:site/tag site)))))
+                 first)
+        opts (assoc opts :site site :posts posts :welcome welcome :list lst)
+        {:keys [site posts] :as opts} opts
+        netlify-config {:subscribeRedirect "https://biffweb.com/subscribed/"
+                        :listAddress (:list/address lst)
+                        :mailgunDomain (:mailgun/domain account)
+                        :mailgunKey (:mailgun/api-key account)
+                        :welcomeEmail {:from (str (:list/title lst)
+                                                  " <doreply@" (:mailgun/domain account) ">")
+                                       :h:Reply-To (:list/reply-to lst)
+                                       :subject (str "Welcome to " (:list/title lst))
+                                       :html (:post/html welcome)}
+                        :recaptchaSecret (:recaptcha/secret account)}]
+    (spit "netlify/functions/config.json"
+          (json/generate-string netlify-config))
+    (doseq [[path page] pages]
+      (render! path
+               "<!DOCTYPE html>"
+               (page (assoc opts :path path))))
+    (doseq [post posts
+            :let [path (str "/p/" (:post/slug post) "/")]]
+      (render! path
+               "<!DOCTYPE html>"
+               (post-page (assoc opts :path path :post post))))
+    (render! "/feed.xml"
+             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+             (atom-feed (assoc opts :path "/feed.xml")))
+    (spit "public/_redirects" (:site/redirects site))
+    (->> (file-seq (io/file "assets"))
+         (filter #(.isFile %))
+         (run! #(io/copy % (doto (io/file "public" (subs (.getPath %) (count "assets/"))) io/make-parents))))
+    (shell/sh "tailwindcss"
+              "-c" "tailwind.config.js"
+              "-i" "tailwind.css"
+              "-o" "public/css/main.css"
+              "--minify")))
 
-(defn main [{:keys [site posts] :as opts}]
-  (doseq [[path page] pages]
-    (render! path
-             "<!DOCTYPE html>"
-             (page (assoc opts :path path))))
-  (doseq [post posts
-          :let [path (str "/p/" (:post/slug post) "/")]]
-    (render! path
-             "<!DOCTYPE html>"
-             (post-page (assoc opts :path path :post post))))
-  (render! "/feed.xml"
-           "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-           (atom-feed (assoc opts :path "/feed.xml")))
-  (spit "_redirects" (:site/redirects site))
-  (spit "_files" (str (slurp "_files")
-                      (get-sitemap {:url "https://biffdocs.netlify.app"
-                                    :root "/docs"})
-                      (get-sitemap {:url "https://biffapi.netlify.app"
-                                    :root "/api"})))
-  (shell/sh "tailwindcss"
-            "-c" "tailwind.config.js"
-            "-i" "tailwind.css"
-            "-o" "css/main.css"
-            "--minify"))
-
-(main (edn/read-string (slurp "_input.edn")))
+(main (edn/read-string (slurp "input.edn")))
 nil
