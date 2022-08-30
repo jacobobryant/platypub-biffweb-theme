@@ -1,2 +1,4 @@
 {:paths ["src"]
- :deps {com.platypub.themes/default {:local/root "../default"}}}
+ :deps {com.platypub.themes/default {:git/url "https://github.com/jacobobryant/platypub"
+                                     :git/sha "e0feb67e96a64126b26c8a444e95de208ed6a1a5"
+                                     :deps/root "themes/default"}}}
