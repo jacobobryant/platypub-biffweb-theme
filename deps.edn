@@ -1,0 +1,2 @@
+{:paths ["src"]
+ :deps {com.platypub.themes/default {:local/root "../default"}}}

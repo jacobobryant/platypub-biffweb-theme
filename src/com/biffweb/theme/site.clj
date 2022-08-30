@@ -1,104 +1,11 @@
-#!/usr/bin/env bb
-; vim: ft=clojure
-(require '[hiccup2.core :as hiccup])
-(require '[hiccup.util :refer [raw-string]])
-(require '[babashka.curl :as curl])
-
-;;; util
-
-(defn render! [path doctype hiccup]
-  (let [path (str "public" (str/replace path #"/$" "/index.html"))]
-    (io/make-parents path)
-    (spit path (str doctype "\n" (hiccup/html hiccup)))))
-
-(defn url-encode [s]
-  (java.net.URLEncoder/encode (str s) "UTF-8"))
-
-(defn map->query [m]
-  (->> m
-       (map (fn [[k v]]
-              (str (url-encode (name k)) "=" (url-encode v))))
-       (str/join "&")))
-
-(def rfc3339 "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-
-(defn cached-img-url [opts]
-  (str "https://images.weserv.nl/?" (map->query opts)))
-
-(defn format-date
-  ([fmt date]
-   (when date
-     (.. (java.time.format.DateTimeFormatter/ofPattern fmt)
-         (withLocale java.util.Locale/ENGLISH)
-         (withZone (java.time.ZoneId/of "UTC"))
-         (format (.toInstant date)))))
-  ([date]
-   (format-date rfc3339 date)))
-
-(def emdash [:span (raw-string "&mdash;")])
-
-(def endash [:span (raw-string "&#8211;")])
-
-(def nbsp [:span (raw-string "&nbsp;")])
-
-(def recaptcha-disclosure
-  [:span "This site is protected by reCAPTCHA and the Google "
-   [:a.underline {:href "https://policies.google.com/privacy" :target "_blank"}
-    "Privacy Policy"] " and "
-   [:a.underline {:href "https://policies.google.com/terms" :target "_blank"}
-    "Terms of Service"] " apply."])
-
-(defn base-html
-  [{{:site/keys [title description image url]} :site :keys [path]} & body]
-  [:html
-   {:lang "en-US"
-    :style {:min-height "100%"
-            :height "auto"}}
-   [:head
-    [:title title]
-    [:meta {:charset "UTF-8"}]
-    [:meta {:name "description" :content description}]
-    [:meta {:content title :property "og:title"}]
-    [:meta {:content description :property "og:description"}]
-    (when image
-      [:meta {:content image :property "og:image"}])
-    [:meta {:content "summary" :name "twitter:card"}]
-    [:meta {:content (str url path) :property "og:url"}]
-    [:link {:ref "canonical" :href (str url path)}]
-    [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
-    [:meta {:charset "utf-8"}]
-    [:link {:href "/feed.xml",
-            :title "Feed for biffweb.com",
-            :type "application/atom+xml",
-            :rel "alternate"}]
-    [:script {:src "https://sa.findka.com/latest.js",
-              :data-skip-dnt true
-              :defer "defer",
-              :async "async"}]
-    [:noscript [:img {:alt "", :src "https://sa.findka.com/noscript.gif"}]]
-    [:link {:rel "stylesheet" :href "/css/main.css"}]
-    [:script {:src "https://unpkg.com/hyperscript.org@0.9.3"}]
-    [:link {:href "/feed.xml",
-            :title "Biff",
-            :type "application/atom+xml",
-            :rel "alternate"}]
-    [:script {:src "https://www.google.com/recaptcha/api.js"
-              :async "async"
-              :defer "defer"}]]
-   [:body
-    {:style {:position "absolute"
-             :width "100%"
-             :min-height "100%"
-             :display "flex"
-             :flex-direction "column"}}
-    body]])
-
-;;; theme
-
-(defn button [{:keys [href]} label]
-  [:a.bg-gray-100.hover:bg-gray-300.text-black.text-center.py-1.px-3.rounded.font-semibold
-   {:href href}
-   label])
+(ns com.biffweb.theme.site
+  (:require [babashka.fs :as fs]
+            [clojure.edn :as edn]
+            [clojure.string :as str]
+            [clojure.java.io :as io]
+            [clojure.java.shell :as shell]
+            [com.platypub.themes.common :as common]
+            [hiccup.util :refer [raw-string]]))
 
 (def logo
   [:div [:a {:href "/"}
@@ -118,7 +25,8 @@
    ["Docs" "/docs/"]
    ["API" "/api/com.biffweb.html"]
    ["Repo" "https://github.com/jacobobryant/biff"]
-   ["Community" "/community/"]])
+   ["Community" "/community/"]
+   ["Consulting" "/consulting/"]])
 
 (def navbar
   (list
@@ -137,12 +45,12 @@
      (for [[label href] nav-options]
        [:div.my-2 [:a.hover:underline.text-lg {:href href} label]])]))
 
-(defn byline [{:keys [post/published-at]}]
+(defn byline [{:keys [published-at]}]
   [:div
    {:style {:display "flex"
             :align-items "center"}}
-   [:img {:src (cached-img-url {:url "https://cdn.findka.com/profile.jpg"
-                                :w 200 :h 200})
+   [:img {:src (common/cached-img-url {:url "https://cdn.findka.com/profile.jpg"
+                                       :w 200 :h 200})
           :width "50px"
           :height "50px"
           :style {:border-radius "50%"}}]
@@ -156,7 +64,7 @@
     [:div {:style {:line-height "1"
                    :font-size "90%"
                    :color "#4b5563"}}
-     (format-date "d MMM yyyy" published-at)]]])
+     (common/format-date "d MMM yyyy" published-at)]]])
 
 (def errors
   {"invalid-email" "It looks like that email is invalid. Try a different one."
@@ -172,7 +80,7 @@
    [:div.font-bold.text-3xl.leading-none
     "Biff: The Newsletter"]
    [:div.h-5]
-   [:div "Project updates to help you Biff your next web app."]
+   [:div "Stay up-to-date about all things Biff"]
    [:div.h-5]
    [:script (raw-string "function onSubscribe(token) { document.getElementById('recaptcha-form').submit(); }")]
    [:form#recaptcha-form.w-full.max-w-md
@@ -221,31 +129,28 @@
    [:div.h-20]
    (when show-disclosure
      [:div.sm:text-center.text-sm.leading-snug.opacity-75.w-full.px-3.mb-3
-      recaptcha-disclosure])])
+      (common/recaptcha-disclosure {:link-class "underline"})])])
 
 (defn post-page [{:keys [site post account] :as opts}]
-  (base-html
-    (assoc opts :site (assoc site
-                             :site/title (:post/title post)
-                             :site/description (:post/description post)
-                             :site/image (or (:post/image post) (:site/image site))))
+  (common/base-html
+    opts
     navbar
     [:div.mx-auto.p-3.text-lg.flex-grow.w-full
-     {:class (if ((:post/tags post) "video")
+     {:class (if ((:tags post) "video")
                "max-w-screen-lg"
                "max-w-screen-sm")}
      [:div.h-5]
      [:h1.font-bold.leading-tight.text-gray-900.text-4xl
-      (:post/title post)]
+      (:title post)]
      [:div.h-3]
      (byline post)
      [:div.h-5]
-     [:div.post-content (raw-string (:post/html post))]
+     [:div.post-content (raw-string (:html post))]
      [:div.h-5]]
     (subscribe-form {:bg :dark :sitekey (:recaptcha/site account)})
     [:div.bg-primary
      [:div.sm:text-center.text-sm.leading-snug.w-full.px-3.pb-3.text-white.opacity-75
-      recaptcha-disclosure]]))
+      (common/recaptcha-disclosure {:link-class "underline"})]]))
 
 (def sponsors
   [{:img "https://avatars.githubusercontent.com/u/19023?v=4"
@@ -258,16 +163,16 @@
     :url "https://github.com/wuuei"}])
 
 (defn subscribed-page [opts]
-  (base-html
-    (assoc-in opts [:site :site/title] "You're subscribed to Biff: The Newsletter")
+  (common/base-html
+    (assoc opts :base/title "You're subscribed to Biff: The Newsletter")
     navbar
     [:div.max-w-screen-lg.mx-auto.p-3.w-full
      [:h1.font-bold.text-2xl "You're subscribed"]
      [:div "Check your inbox for a welcome email."]]))
 
 (defn newsletter-page [{:keys [posts] :as opts}]
-  (base-html
-    (assoc-in opts [:site :site/title] "Biff: The Newsletter")
+  (common/base-html
+    (assoc opts :base/title "Biff: The Newsletter")
     navbar
     (subscribe-form {:bg :light})
     [:div.bg-gray-200.h-full.flex-grow
@@ -275,47 +180,22 @@
      [:div.text-center.text-2xl "Recent posts"]
      [:div.h-10]
      [:div.max-w-screen-sm.mx-auto.px-3
-      (for [{:post/keys [title slug published-at description tags]} posts
-            :when (not (tags "draft"))]
+      (for [{:keys [title slug published-at description tags]} posts
+            :when (not (tags "unlisted"))]
         [:a.block.mb-5.bg-white.rounded.p-3.hover:bg-gray-100.cursor-pointer
          {:href (str "/p/" slug "/")}
-         [:div.text-sm.text-gray-800 (format-date "d MMM yyyy" published-at)]
+         [:div.text-sm.text-gray-800 (common/format-date "d MMM yyyy" published-at)]
          [:div.h-1]
          [:div.text-xl.font-bold title]
          [:div.h-1]
          [:div description]])]
      [:div.h-10]
      [:div.sm:text-center.text-sm.leading-snug.opacity-75.w-full.px-3
-      recaptcha-disclosure]
+      (common/recaptcha-disclosure {:link-class "underline"})]
      [:div.h-3]]))
 
-(defn community-page [opts]
-  (base-html
-    (assoc-in opts [:site :site/title] "Community | Biff")
-    navbar
-    [:div.max-w-screen-lg.mx-auto.w-full.px-3
-     [:div.h-5]
-     [:div.text-2xl "Community"]
-     [:div.h-5]
-     [:ul
-      [:li.max-w-prose.mb-2
-       "The #biff channel on "
-       [:a.link {:href "http://clojurians.net/" :target "_blank"}
-        "Clojurians Slack"]
-       " is a great place to ask questions."]
-      [:li.max-w-prose.mb-2
-       "For long-form discussion, you can go to "
-       [:a.link {:href "https://github.com/jacobobryant/biff/discussions"
-                 :target "_blank"}
-        "GitHub Discussions"] "."]
-      [:li.max-w-prose.mb-2
-       "Finally, you can always email me directly: "
-       [:a.link {:href "mailto:hello@jacobobryant.com"
-                 :target "_blank"}
-        "hello@jacobobryant.com"] "."]]]))
-
 (defn landing-page [opts]
-  (base-html
+  (common/base-html
     opts
     navbar
     [:div.py-10.flex.flex-col.items-center.flex-grow.bg-center.px-3
@@ -390,7 +270,7 @@
       [:div.flex.gap-4.mx-auto.justify-center
        (for [{:keys [img url]} sponsors]
          [:a {:href url :target "_blank"}
-          [:img {:src (cached-img-url {:url img :w 160 :h 160})
+          [:img {:src (common/cached-img-url {:url img :w 160 :h 160})
                  :width "40px"
                  :height "40px"
                  :style {:border-radius "50%"}}]])]
@@ -401,89 +281,62 @@
         "Support Biff"]]
       [:div.h-8]]]))
 
-(defn atom-feed [{{:site/keys [title description image url]} :site
-                  :keys [posts path]}]
-  (let [feed-url (str url path)
-        posts (remove #((set (:post/tags %)) "draft") posts)]
-    [:feed {:xmlns "http://www.w3.org/2005/Atom"}
-     [:title title]
-     [:id (url-encode feed-url)]
-     [:updated (format-date (:post/published-at (first posts)))]
-     [:link {:rel "self" :href feed-url :type "application/atom+xml"}]
-     [:link {:href url}]
-     (for [{:post/keys [title slug published-at html]} (take 10 posts)
-           :let [url (str url "/p/" slug)]]
-       [:entry
-        [:title {:type "html"} title]
-        [:id (url-encode url)]
-        [:updated (format-date published-at)]
-        [:content {:type "html"} html]
-        [:link {:href url}]
-        [:author
-         [:name "Jacob O'Bryant"]
-         [:uri "https://jacobobryant.com/"]]])]))
+(defn render-card [{:keys [site post] :as opts}]
+  (common/base-html
+    opts
+    [:div.mx-auto.border.border-black
+     {:style "width:1202px;height:620px"}
+     [:div.flex.flex-col.justify-center.h-full.p-12
+      [:div [:img {:src "/images/card-logo.png"
+             :alt "Logo"
+             :style {:max-height "60px"}}]]
+      [:div {:class "h-[1.5rem]"}]
+      [:h1.font-bold.leading-none
+       {:class "text-[6rem]"}
+       (str/replace (:title post) #"^\[draft\] " "")]
+      [:div {:class "h-[2.5rem]"}]
+      (byline post)]]))
+
+(defn cards! [{:keys [posts] :as opts}]
+  (doseq [post posts
+          :let [path (str "/p/" (:slug post) "/card/")]]
+    (common/render! path
+                    "<!DOCTYPE html>"
+                    (render-card (assoc opts :base/path path :post post)))))
+
+(defn render-page [{:keys [site post account] :as opts}]
+  (common/base-html
+   opts
+   navbar
+   [:div.mx-auto.p-3.text-lg.flex-grow.w-full.max-w-screen-md
+    [:div.post-content (raw-string (:html post))]]))
 
 (def pages
   {"/" landing-page
    "/newsletter/" newsletter-page
-   "/community/" community-page
    "/subscribed/" subscribed-page})
 
-(defn main [{:keys [db site-id account] :as opts}]
-  (let [site (get db site-id)
-        posts (->> (vals db)
-                   (map #(update % :post/tags set))
-                   (filter (fn [post]
-                             (and (= :post (:db/doc-type post))
-                                  (= :published (:post/status post))
-                                  ((:post/tags post) (:site/tag site)))))
-                   (sort-by :post/published-at #(compare %2 %1)))
-        welcome (->> posts
-                     (filter #((:post/tags %) "welcome"))
-                     first)
-        posts (->> posts
-                   (remove #((:post/tags %) "welcome")))
-        lst (->> (vals db)
-                 (map #(update % :list/tags set))
-                 (filter (fn [lst]
-                           (and (= :list (:db/doc-type lst))
-                                ((:list/tags lst) (:site/tag site)))))
-                 first)
-        opts (assoc opts :site site :posts posts :welcome welcome :list lst)
-        {:keys [site posts] :as opts} opts
-        netlify-config {:subscribeRedirect "https://biffweb.com/subscribed/"
-                        :listAddress (:list/address lst)
-                        :mailgunDomain (:mailgun/domain account)
-                        :mailgunKey (:mailgun/api-key account)
-                        :welcomeEmail {:from (str (:list/title lst)
-                                                  " <doreply@" (:mailgun/domain account) ">")
-                                       :h:Reply-To (:list/reply-to lst)
-                                       :subject (str "Welcome to " (:list/title lst))
-                                       :html (:post/html welcome)}
-                        :recaptchaSecret (:recaptcha/secret account)}]
-    (spit "netlify/functions/config.json"
-          (json/generate-string netlify-config))
-    (doseq [[path page] pages]
-      (render! path
-               "<!DOCTYPE html>"
-               (page (assoc opts :path path))))
-    (doseq [post posts
-            :let [path (str "/p/" (:post/slug post) "/")]]
-      (render! path
-               "<!DOCTYPE html>"
-               (post-page (assoc opts :path path :post post))))
-    (render! "/feed.xml"
-             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-             (atom-feed (assoc opts :path "/feed.xml")))
-    (spit "public/_redirects" (:site/redirects site))
-    (->> (file-seq (io/file "assets"))
-         (filter #(.isFile %))
-         (run! #(io/copy % (doto (io/file "public" (subs (.getPath %) (count "assets/"))) io/make-parents))))
-    (shell/sh "tailwindcss"
-              "-c" "tailwind.config.js"
-              "-i" "tailwind.css"
-              "-o" "public/css/main.css"
-              "--minify")))
+(defn assets!
+  "Deprecated"
+  []
+  (->> (file-seq (io/file "assets"))
+       (filter #(.isFile %))
+       (run! #(io/copy % (doto (io/file "public" (subs (.getPath %) (count "assets/"))) io/make-parents)))))
 
-(main (edn/read-string (slurp "input.edn")))
-nil
+(defn -main []
+  (let [opts (common/derive-opts (edn/read-string (slurp "input.edn")))]
+    (common/redirects! opts)
+    (common/netlify-subscribe-fn! opts)
+    (common/pages! opts render-page pages)
+    (common/posts! opts post-page)
+    (common/atom-feed! opts)
+    (common/sitemap! {:exclude [#"/subscribed/" #".*/card/"]})
+    (cards! opts)
+    (assets!)
+    (when (fs/exists? "main.css")
+      (io/make-parents "public/css/_")
+      (common/safe-copy "main.css" "public/css/main.css")))
+  nil)
+
+(comment
+ (-main))

@@ -1,5 +1,6 @@
 .netlify
 assets
-netlify/functions/config.json
+input.edn
+netlify
 node_modules
 public
