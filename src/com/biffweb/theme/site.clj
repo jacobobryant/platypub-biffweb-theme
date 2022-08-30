@@ -304,12 +304,12 @@
                     "<!DOCTYPE html>"
                     (render-card (assoc opts :base/path path :post post)))))
 
-(defn render-page [{:keys [site post account] :as opts}]
+(defn render-page [{:keys [site page account] :as opts}]
   (common/base-html
    opts
    navbar
    [:div.mx-auto.p-3.text-lg.flex-grow.w-full.max-w-screen-md
-    [:div.post-content (raw-string (:html post))]]))
+    [:div.post-content (raw-string (:html page))]]))
 
 (def pages
   {"/" landing-page
@@ -337,6 +337,3 @@
       (io/make-parents "public/css/_")
       (common/safe-copy "main.css" "public/css/main.css")))
   nil)
-
-(comment
- (-main))
