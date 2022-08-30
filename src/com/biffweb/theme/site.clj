@@ -329,7 +329,8 @@
     (common/netlify-subscribe-fn! opts)
     (common/pages! opts render-page pages)
     (common/posts! opts post-page)
-    (common/atom-feed! opts)
+    (common/atom-feed! (update opts :posts (fn [posts]
+                                             (remove #(contains? (:tags %) "nofeed") posts))))
     (common/sitemap! {:exclude [#"/subscribed/" #".*/card/"]})
     (cards! opts)
     (assets!)
