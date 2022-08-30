@@ -21,7 +21,7 @@
       {:class "h-[4px] w-[30px] my-[6px]"}])])
 
 (def nav-options
-  [["Newsletter" "/newsletter/"]
+  [["Blog" "/newsletter/"]
    ["Docs" "/docs/"]
    ["API" "/api/com.biffweb.html"]
    ["Repo" "https://github.com/jacobobryant/biff"]
@@ -201,7 +201,7 @@
     [:div.py-10.flex.flex-col.items-center.flex-grow.bg-center.px-3
      [:h1.font-bold.leading-tight.text-4xl.text-center
       {:class "max-w-[300px] sm:max-w-none"}
-      "Make your ideas come to life."]
+      "Biff helps solo developers move fast."]
      [:div.h-7]
      [:a.bg-accent.hover:bg-accent-dark.text-white.text-center.py-2.px-8.rounded.font-semibold.text-xl.sm:text-2xl
       {:href "/docs/"}
