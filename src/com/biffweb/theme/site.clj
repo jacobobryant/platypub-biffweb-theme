@@ -45,24 +45,32 @@
      (for [[label href] nav-options]
        [:div.my-2 [:a.hover:underline.text-lg {:href href} label]])]))
 
-(defn byline [{:keys [published-at]}]
+(defn byline [{:keys [published-at byline/card]}]
   [:div
    {:style {:display "flex"
             :align-items "center"}}
-   [:img {:src (common/cached-img-url {:url "https://cdn.findka.com/profile.jpg"
-                                       :w 200 :h 200})
-          :width "50px"
-          :height "50px"
-          :style {:border-radius "50%"}}]
+   [:img (if card
+           {:src "https://cdn.findka.com/profile.jpg"
+            :width "115px"
+            :height "115px"
+            :style {:border-radius "50%"}}
+           {:src (common/cached-img-url {:url "https://cdn.findka.com/profile.jpg"
+                                         :w 200 :h 200})
+            :width "50px"
+            :height "50px"
+            :style {:border-radius "50%"}})]
    [:div {:style {:width "0.75rem"}}]
    [:div
     [:div {:style {:line-height "1.25"}}
-     [:a.text-blue-600.hover:underline
-      {:href "https://jacobobryant.com/"
+     [:a.hover:underline
+      {:class (if card
+                "text-[2.5rem]"
+                "text-blue-600")
+       :href "https://jacobobryant.com/"
        :target "_blank"}
       "Jacob O'Bryant"]]
-    [:div {:style {:line-height "1"
-                   :font-size "90%"
+    [:div {:class (if card "text-[2.2rem]" "text-[90%]")
+           :style {:line-height "1"
                    :color "#4b5563"}}
      (common/format-date "d MMM yyyy" published-at)]]])
 
@@ -295,7 +303,7 @@
        {:class "text-[6rem]"}
        (str/replace (:title post) #"^\[draft\] " "")]
       [:div {:class "h-[2.5rem]"}]
-      (byline post)]]))
+      (byline (assoc post :byline/card true))]]))
 
 (defn cards! [{:keys [posts] :as opts}]
   (doseq [post posts
