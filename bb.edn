@@ -4,6 +4,6 @@
          clean        com.platypub.themes.common.tasks/clean
          css          com.platypub.themes.common.tasks/css
          -on-save     com.platypub.themes.common.tasks/-on-save
-         render-site  com.biffweb.theme.site/-main
+         render-site  (shell "bb" "-m" "com.biffweb.theme.site/-main")
          render-email com.platypub.themes.default.email/-main
          config       com.biffweb.theme.config/-main}}

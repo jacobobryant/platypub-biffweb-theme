@@ -3,9 +3,17 @@
             [clojure.edn :as edn]
             [clojure.string :as str]
             [clojure.java.io :as io]
+            [babashka.tasks :refer [shell]]
             [clojure.java.shell :as shell]
+            [babashka.fs :as fs]
             [com.platypub.themes.common :as common]
-            [hiccup.util :refer [raw-string]]))
+            [hiccup.util :refer [raw-string]]
+            [cheshire.core :as cheshire]))
+
+(defn base-html [{:keys [dev] :as opts} & body]
+  (common/base-html (cond-> opts
+                      dev (update :base/head concat [[:script {:src "/js/live.js"}]]))
+                    body))
 
 (def logo
   [:div [:a {:href "/"}
@@ -21,17 +29,20 @@
       {:class "h-[4px] w-[30px] my-[6px]"}])])
 
 (def nav-options
-  [["Blog" "/newsletter/"]
-   ["Docs" "/docs/"]
-   ["API" "/api/com.biffweb.html"]
-   ["Repo" "https://github.com/jacobobryant/biff"]
-   ["Community" "/community/"]
+  [["Docs" "/docs/"]
+   ["Blog" "/newsletter/"]
+   ;["API" "/api/com.biffweb.html"]
+   ;["Repo" "https://github.com/jacobobryant/biff"]
+   ;["Community" "/community/"]
    ["Consulting" "/consulting/"]])
 
-(def navbar
-  (list
+(defn navbar
+  ([] (navbar {:class "max-w-screen-lg"}))
+  ([opts]
+   (list
     [:div.bg-primary.py-2
-     [:div.flex.max-w-screen-lg.mx-auto.items-center.text-white.gap-4.text-lg.flex-wrap.px-3
+     [:div.flex.mx-auto.items-center.text-white.gap-4.text-lg.flex-wrap.px-3
+      opts
       logo
       [:div.flex-grow]
       (for [[label href] nav-options]
@@ -43,7 +54,7 @@
       hamburger-icon]]
     [:div#nav-menu.bg-primary.px-5.py-2.text-white.text-lg.hidden.transition-all.ease-in-out.sm:hidden
      (for [[label href] nav-options]
-       [:div.my-2 [:a.hover:underline.text-lg {:href href} label]])]))
+       [:div.my-2 [:a.hover:underline.text-lg {:href href} label]])])))
 
 (defn byline [{:keys [published-at byline/card]}]
   [:div
@@ -140,9 +151,9 @@
       (common/recaptcha-disclosure {:link-class "underline"})])])
 
 (defn post-page [{:keys [site post account] :as opts}]
-  (common/base-html
+  (base-html
     opts
-    navbar
+    (navbar)
     [:div.mx-auto.p-3.text-lg.flex-grow.w-full
      {:class (if ((:tags post) "video")
                "max-w-screen-lg"
@@ -171,17 +182,17 @@
     :url "https://github.com/wuuei"}])
 
 (defn subscribed-page [opts]
-  (common/base-html
+  (base-html
     (assoc opts :base/title "You're subscribed to Biff: The Newsletter")
-    navbar
+    (navbar)
     [:div.max-w-screen-lg.mx-auto.p-3.w-full
      [:h1.font-bold.text-2xl "You're subscribed"]
      [:div "Check your inbox for a welcome email."]]))
 
 (defn newsletter-page [{:keys [posts] :as opts}]
-  (common/base-html
+  (base-html
     (assoc opts :base/title "Biff: The Newsletter")
-    navbar
+    (navbar)
     (subscribe-form {:bg :light})
     [:div.bg-gray-200.h-full.flex-grow
      [:div.h-10]
@@ -203,9 +214,9 @@
      [:div.h-3]]))
 
 (defn landing-page [opts]
-  (common/base-html
+  (base-html
     opts
-    navbar
+    (navbar)
     [:div.py-10.flex.flex-col.items-center.flex-grow.bg-center.px-3
      [:h1.font-bold.leading-tight.text-4xl.text-center
       {:class "max-w-[300px] sm:max-w-none"}
@@ -290,7 +301,7 @@
       [:div.h-8]]]))
 
 (defn render-card [{:keys [site post] :as opts}]
-  (common/base-html
+  (base-html
     opts
     [:div.mx-auto.border.border-black
      {:style "width:1202px;height:620px"}
@@ -313,9 +324,9 @@
                     (render-card (assoc opts :base/path path :post post)))))
 
 (defn render-page [{:keys [site page account] :as opts}]
-  (common/base-html
+  (base-html
    opts
-   navbar
+   (navbar)
    [:div.mx-auto.p-3.text-lg.flex-grow.w-full.max-w-screen-md
     [:div.post-content (raw-string (:html page))]]))
 
@@ -331,8 +342,106 @@
        (filter #(.isFile %))
        (run! #(io/copy % (doto (io/file "public" (subs (.getPath %) (count "assets/"))) io/make-parents)))))
 
+(defn read-docs []
+  (let [files (->> (file-seq (io/file "docs"))
+                   (filter #(.isFile %)))
+        lines (->> files
+                   (map (comp cheshire/generate-string slurp))
+                   (str/join "\n"))
+        result (shell/sh "node" "render-markdoc.js" :in lines)
+        docs (->> (map (fn [file output]
+                         (let [md-path (str/replace (.getPath file) "docs/" "")]
+                           (assoc (cheshire/parse-string output true)
+                                  :md-path md-path
+                                  :path (-> md-path
+                                            (str/replace #"\d\d-" "")
+                                            (str/replace ".md" "")))))
+                       files
+                       (str/split-lines (:out result))))]
+    docs))
+
+(defn join [sep xs]
+  (rest (mapcat vector (repeat sep) xs)))
+
+(defn assoc-some [m & kvs]
+  (let [kvs (->> kvs
+                 (partition 2)
+                 (filter (comp some? second))
+                 (apply concat))]
+    (if (empty? kvs)
+      m
+      (apply assoc m kvs))))
+
+(def pprint clojure.pprint/pprint)
+
+(defn nav-href [doc]
+  (if (= (:html doc) "<article></article>")
+    (:href (first (:children doc)))
+    (str "/docs/" (:path doc) "/")))
+
+(defn nav-doc [m]
+  (->> m
+       (sort-by key)
+       (map (fn [[_ doc]]
+              (let [doc (update doc :children nav-doc)]
+                (assoc-some
+                 {:title (:title doc)
+                  :href (nav-href doc)}
+                 :children (not-empty (:children doc))))))))
+
+(defn doc-nav-data [opts docs]
+  (->> docs
+       (map (fn [doc]
+              (assoc doc :segments (str/split (:path doc) #"/"))))
+       (reduce (fn [nav doc]
+                 (update-in nav
+                            (join :children (:segments doc))
+                            merge
+                            doc))
+               {})
+       nav-doc))
+
+(comment
+ (clojure.pprint/pprint
+  (doall (doc-nav-data {} (read-docs)))))
+
+(defn sidebar-left [{:keys [nav-data]}]
+  [:div.w-fit {:class "min-w-[12rem]"}
+   (for [{:keys [href title children]} nav-data]
+     (list
+      [:div.my-3.font-bold [:a {:href href} title]]
+      [:div.border-l-2
+       (for [{:keys [href title]} children]
+        [:div.pl-3.my-2 [:a {:href href} title]])]))])
+
+(defn sidebar-right [opts]
+  nil)
+
+(defn render-doc [{:keys [doc] :as opts}]
+  (base-html
+   opts
+   (navbar {:class "max-w-screen-lg"})
+   [:div.mx-auto.p-3.flex-grow.w-full.max-w-screen-lg
+    [:div.flex
+     (sidebar-left opts)
+     [:div.markdoc (raw-string (:html doc))]
+     (sidebar-right opts)]]))
+
+(defn docs! [opts docs]
+  (let [nav-data (doc-nav-data opts docs)]
+    (doseq [doc docs
+            :let [path (str "/docs/"
+                            (-> (:path doc)
+                                (str/replace #"\d\d-" "")
+                                (str/replace ".md" ""))
+                            "/")]]
+      (common/render! path
+                      "<!DOCTYPE html>"
+                      (render-doc (assoc opts :base/path path :doc doc :nav-data nav-data))))))
+
 (defn -main []
-  (let [opts (common/derive-opts (edn/read-string (slurp "input.edn")))]
+  (let [opts (common/derive-opts (edn/read-string (slurp "input.edn")))
+        opts (merge {:dev true})]
     (common/redirects! opts)
     (common/netlify-subscribe-fn! opts)
     (common/pages! opts render-page pages)
@@ -342,7 +451,12 @@
     (common/sitemap! {:exclude [#"/subscribed/" #".*/card/"]})
     (cards! opts)
     (assets!)
+    (docs! opts (read-docs))
     (when (fs/exists? "main.css")
       (io/make-parents "public/css/_")
       (common/safe-copy "main.css" "public/css/main.css")))
   nil)
+
+(comment
+
+ )
