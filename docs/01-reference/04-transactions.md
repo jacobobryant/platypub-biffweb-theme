@@ -2,8 +2,8 @@
 title: Transactions
 ---
 
-*Biff uses [XTDB](https://xtdb.com/) for the database. It's OK if you haven't used XTDB before,
-but you may want to peruse some of the [learning resources](https://xtdb.com/learn/) at least.*
+*Biff uses [XTDB](https://xtdb.com/) for the database. It's OK if you haven't used XTDB before,*
+*but you may want to peruse some of the [learning resources](https://xtdb.com/learn/) at least.*
 
 The request map passed to HTTP handlers (and the scheduled tasks and
 transaction listeners) includes a `:biff.xtdb/node` key which can be used to

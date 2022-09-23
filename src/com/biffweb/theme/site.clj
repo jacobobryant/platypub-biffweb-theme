@@ -8,12 +8,73 @@
             [babashka.fs :as fs]
             [com.platypub.themes.common :as common]
             [hiccup.util :refer [raw-string]]
-            [cheshire.core :as cheshire]))
+            [cheshire.core :as cheshire]
+            [markdown.core :as md]
+            [clj-yaml.core :as yaml]
+            [clojure.walk :as walk]))
+
+(defn base-html* [{:base/keys [head path] :keys [site] :as opts} & body]
+  (let [[title
+         description
+         image
+         base-url] (for [k ["title" "description" "image" "url"]]
+                     (or (get opts (keyword "base" k))
+                         (get-in opts [:post (keyword k)])
+                         (get-in opts [:page (keyword k)])
+                         (get-in opts [:site (keyword k)])))
+        title (or title (:title site))]
+    [:html
+     {:lang "en-US"
+      :style {:min-height "100%"
+              :height "auto"}}
+     [:head
+      [:title title]
+      [:meta {:charset "UTF-8"}]
+      [:meta {:name "description" :content description}]
+      [:meta {:content title :property "og:title"}]
+      [:meta {:content description :property "og:description"}]
+      (when image
+        (list
+          [:meta {:content "summary_large_image" :name "twitter:card"}]
+          [:meta {:content image :name "twitter:image"}]
+          [:meta {:content image :property "og:image"}]))
+      [:meta {:content (str base-url path) :property "og:url"}]
+      [:link {:ref "canonical" :href (str base-url path)}]
+      [:meta {:name "viewport" :content "width=device-width, initial-scale=1"}]
+      [:meta {:charset "utf-8"}]
+      [:link {:href "/feed.xml",
+              :title (str "Feed for " (:title site)),
+              :type "application/atom+xml",
+              :rel "alternate"}]
+      [:script {:src "https://unpkg.com/hyperscript.org@0.9.3"}]
+      [:script {:src "https://www.google.com/recaptcha/api.js"
+                :async "async"
+                :defer "defer"}]
+      common/favicon-settings
+      (when-some [html (:embed-html site)]
+        (raw-string html))
+      head
+      [:link {:rel "stylesheet" :href "/css/main.css"}]]
+     [:body
+      {:style {:position "absolute"
+               :width "100%"
+               :min-height "100%"
+               :display "flex"
+               :flex-direction "column"}}
+      body]]))
+
+(def css
+  (list
+   [:link {:rel "stylesheet" :href "/css/prism.css"}]
+   [:link {:rel "stylesheet" :href "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown.min.css"}]
+   ;[:link {:rel "stylesheet" :href "/css/vs.css"}]
+   [:script {:src "/js/prism.js"}]))
 
 (defn base-html [{:keys [dev] :as opts} & body]
-  (common/base-html (cond-> opts
-                      dev (update :base/head concat [[:script {:src "/js/live.js"}]]))
-                    body))
+  (base-html* (cond-> opts
+                dev (update :base/head concat [[:script {:src "/js/live.js"}]])
+                true (update :base/head concat css))
+              body))
 
 (def logo
   [:div [:a {:href "/"}
@@ -31,9 +92,9 @@
 (def nav-options
   [["Docs" "/docs/"]
    ["Blog" "/newsletter/"]
-   ;["API" "/api/com.biffweb.html"]
-   ;["Repo" "https://github.com/jacobobryant/biff"]
-   ;["Community" "/community/"]
+   ["API" "/api/com.biffweb.html"]
+   ["Repo" "https://github.com/jacobobryant/biff"]
+   ["Community" "/community/"]
    ["Consulting" "/consulting/"]])
 
 (defn navbar
@@ -342,7 +403,7 @@
        (filter #(.isFile %))
        (run! #(io/copy % (doto (io/file "public" (subs (.getPath %) (count "assets/"))) io/make-parents)))))
 
-(defn read-docs []
+(defn read-docs-markdoc []
   (let [files (->> (file-seq (io/file "docs"))
                    (filter #(.isFile %)))
         lines (->> files
@@ -360,6 +421,28 @@
                        (str/split-lines (:out result))))]
     docs))
 
+(defn read-docs []
+  (for [f (file-seq (io/file "docs"))
+        :when (.isFile f)
+        :let [content (slurp f)
+              front-matter (-> (re-find #"(?s)---([^(---)]*)---" content)
+                               second
+                               yaml/parse-string)
+              content (-> (str/split content #"---" 3)
+                          last
+                          str/trim
+                          (md/md-to-html-string :heading-anchors true
+                                                :code-style #(str "class=\"language-" % "\""))
+                          not-empty)
+              md-path (str/replace (.getPath f) "docs/" "")
+              path (-> md-path
+                       (str/replace #"\d\d-" "")
+                       (str/replace ".md" ""))]]
+    (merge front-matter
+           {:md-path md-path
+            :path path
+            :html content})))
+
 (defn join [sep xs]
   (rest (mapcat vector (repeat sep) xs)))
 
@@ -375,73 +458,146 @@
 (def pprint clojure.pprint/pprint)
 
 (defn nav-href [doc]
-  (if (= (:html doc) "<article></article>")
+  (if (nil? (:html doc))
     (:href (first (:children doc)))
     (str "/docs/" (:path doc) "/")))
 
 (defn nav-doc [m]
   (->> m
-       (sort-by key)
+       (sort-by (comp :md-path val))
        (map (fn [[_ doc]]
               (let [doc (update doc :children nav-doc)]
                 (assoc-some
                  {:title (:title doc)
-                  :href (nav-href doc)}
+                  :href (nav-href doc)
+                  :has-content (some? (:html doc))}
                  :children (not-empty (:children doc))))))))
 
-(defn doc-nav-data [opts docs]
-  (->> docs
-       (map (fn [doc]
-              (assoc doc :segments (str/split (:path doc) #"/"))))
-       (reduce (fn [nav doc]
-                 (update-in nav
-                            (join :children (:segments doc))
-                            merge
-                            doc))
-               {})
-       nav-doc))
+(defn doc-nav-data [docs]
+  (let [nav-data (->> docs
+                      (map (fn [doc]
+                             (assoc doc :segments (str/split (:path doc) #"/"))))
+                      (reduce (fn [nav doc]
+                                (update-in nav
+                                           (join :children (:segments doc))
+                                           merge
+                                           doc))
+                              {})
+                      nav-doc)
+        nodes (->> (tree-seq
+                    :children
+                    :children
+                    {:children nav-data})
+                   (filter :has-content))
+        href->siblings (into {} (map (fn [prev cur next]
+                                       [(:href cur) {:next next :prev prev}])
+                                     (concat [nil nil] nodes)
+                                     (concat [nil] nodes [nil])
+                                     (concat nodes [nil nil])))
+        nav-data (walk/postwalk
+                  (fn [node]
+                    (if-let [siblings (and (map? node) (href->siblings (:href node)))]
+                      (merge node siblings)
+                      node))
+                  nav-data)]
+    nav-data))
 
-(comment
- (clojure.pprint/pprint
-  (doall (doc-nav-data {} (read-docs)))))
+(defn assoc-nav-siblings [docs nav-data]
+  (let [nodes (->> (tree-seq
+                    :children
+                    :children
+                    {:children nav-data})
+                   (filter :has-content))
+        href->siblings (into {} (map (fn [prev cur next]
+                                       [(:href cur) {:next next :prev prev}])
+                                     (concat [nil nil] nodes)
+                                     (concat [nil] nodes [nil])
+                                     (concat nodes [nil nil])))]
+    (map #(merge % (href->siblings (str "/docs/" (:path %) "/"))) docs)))
 
-(defn sidebar-left [{:keys [nav-data]}]
-  [:div.w-fit {:class "min-w-[12rem]"}
-   (for [{:keys [href title children]} nav-data]
-     (list
-      [:div.my-3.font-bold [:a {:href href} title]]
-      [:div.border-l-2
+(defn sidebar-left [{:keys [doc-nav-data base/path]}]
+  [:div
+   [:div.w-fit.sticky.top-0.sm:whitespace-nowrap
+    [:div.h-3]
+    (for [{:keys [href title children has-content]} doc-nav-data]
+      (list
+       [:div.pb-3
+        {:class (if (and has-content (= path href))
+                  "text-accent-dark font-bold"
+                  "font-semibold")}
+        [:a.hover:underline {:href href} title]]
        (for [{:keys [href title]} children]
-        [:div.pl-3.my-2 [:a {:href href} title]])]))])
+         [:div.border-l-2.px-3.py-1.text-sm
+          {:class (if (= path href)
+                    "border-accent text-accent-dark font-bold"
+                    "font-medium")}
+          [:a.hover:underline {:href href} title]])))]])
 
 (defn sidebar-right [opts]
   nil)
 
+(def chevron-left
+  [:svg.w-3.opacity-50 {:xmlns "http://www.w3.org/2000/svg", :viewbox "0 0 384 512"}
+   [:path {:d "M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 278.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"}]])
+
+(def chevron-right
+  [:svg.w-3.opacity-50 {:xmlns "http://www.w3.org/2000/svg", :viewbox "0 0 384 512"}
+   [:path {:d "M342.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L274.7 256 105.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"}]])
+
 (defn render-doc [{:keys [doc] :as opts}]
   (base-html
-   opts
+   (assoc opts :base/title (str (:title doc) " | Biff"))
    (navbar {:class "max-w-screen-lg"})
    [:div.mx-auto.p-3.flex-grow.w-full.max-w-screen-lg
-    [:div.flex
+    [:div.flex.gap-x-2.sm:gap-x-4
      (sidebar-left opts)
-     [:div.markdoc (raw-string (:html doc))]
+     [:div.min-w-0
+      [:div.markdown-body
+       [:h1 (:title doc)]
+       (raw-string (:html doc))]
+      [:div.h-10]
+      [:hr]
+      [:div.flex.my-5.items-end
+       (when-some [prev (:prev doc)]
+         (list chevron-left
+               [:div.w-2]
+               [:div.leading-none
+                [:div.text-sm.text-gray-600 "Prev"]
+                [:a.font-bold.text-lg.leading-none.hover:underline
+                 {:href (:href prev)}
+                 (:title prev)]]))
+       [:div.flex-grow]
+       (when-some [next (:next doc)]
+         (list [:div.leading-none
+                [:div.text-sm.text-gray-600.text-right "Next"]
+                [:a.font-bold.text-lg.leading-none.hover:underline
+                 {:href (:href next)}
+                 (:title next)]]
+               [:div.w-2]
+               chevron-right))]]
      (sidebar-right opts)]]))
 
 (defn docs! [opts docs]
-  (let [nav-data (doc-nav-data opts docs)]
-    (doseq [doc docs
-            :let [path (str "/docs/"
-                            (-> (:path doc)
-                                (str/replace #"\d\d-" "")
-                                (str/replace ".md" ""))
-                            "/")]]
-      (common/render! path
-                      "<!DOCTYPE html>"
-                      (render-doc (assoc opts :base/path path :doc doc :nav-data nav-data))))))
+  (doseq [doc docs
+          :when (some? (:html doc))
+          :let [path (str "/docs/"
+                          (-> (:path doc)
+                              (str/replace #"\d\d-" "")
+                              (str/replace ".md" ""))
+                          "/")]]
+    (common/render! path
+                    "<!DOCTYPE html>"
+                    (render-doc (assoc opts :base/path path :doc doc)))))
 
 (defn -main []
   (let [opts (common/derive-opts (edn/read-string (slurp "input.edn")))
-        opts (merge {:dev true})]
+        docs (read-docs)
+        doc-nav-data (doc-nav-data docs)
+        docs (assoc-nav-siblings docs doc-nav-data)
+        opts (-> opts
+                 (merge {:dev false ;true
+                         :doc-nav-data doc-nav-data})
+                 (update-in [:site :redirects] str "\n/docs/ " (:href (first doc-nav-data)) "\n"))]
     (common/redirects! opts)
     (common/netlify-subscribe-fn! opts)
     (common/pages! opts render-page pages)
@@ -451,12 +607,11 @@
     (common/sitemap! {:exclude [#"/subscribed/" #".*/card/"]})
     (cards! opts)
     (assets!)
-    (docs! opts (read-docs))
+    (docs! opts docs)
     (when (fs/exists? "main.css")
       (io/make-parents "public/css/_")
-      (common/safe-copy "main.css" "public/css/main.css")))
+      (common/safe-copy "main.css" "public/css/main.css"))
+    (fs/copy-tree (io/file (io/resource "com/biffweb/theme/public"))
+                  "public"
+                  {:replace-existing true}))
   nil)
-
-(comment
-
- )

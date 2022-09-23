@@ -78,3 +78,9 @@
 }
 
 .grecaptcha-badge { visibility: hidden; }
+
+.markdown-body .highlight pre, .markdown-body pre {
+  background-color: #2d2d2d;
+  overflow-x: auto;
+  max-width: 100%;
+}

@@ -96,8 +96,8 @@ to just read the source:
     (clojure.tools.namespace.repl/refresh :after after-refresh)))
 ```
 
-(In general, reading [Biff's source
-code](https://github.com/jacobobryant/biff/tree/dev/src/com/biffweb.clj) is
+(In general, reading
+[Biff's source code](https://github.com/jacobobryant/biff/tree/dev/src/com/biffweb.clj) is
 a great way to learn more about how it works under the hood. The whole thing
 isn't very large anyway.)
 

@@ -3,4 +3,4 @@ assets
 input.edn
 netlify
 node_modules
-public
+/public

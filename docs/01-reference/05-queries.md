@@ -3,8 +3,8 @@ title: Queries
 ---
 
 As mentioned last section, Biff uses [XTDB](https://xtdb.com/) for the
-database. See the [XTDB query
-reference](https://docs.xtdb.com/language-reference/datalog-queries/).
+database. See the
+[XTDB query reference](https://docs.xtdb.com/language-reference/datalog-queries/).
 
 Biff provides a couple query convenience functions. `com.biffweb/q` is a *very*
 light wrapper around `xtdb.api/q`. First, it will throw an exception if you

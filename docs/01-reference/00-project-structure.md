@@ -7,7 +7,7 @@ A new Biff project will look like this:
 (Throughout these docs, we'll assume you selected `com.example` for the main
 namespace when creating your project.)
 
-```
+```text
 ├── README.md
 ├── config.edn
 ├── config.sh
@@ -35,8 +35,8 @@ namespace when creating your project.)
 └── task
 ```
 
-`task` is a shell script that contains project commands. For example, `./task
-dev` starts the app locally, and `./task deploy` pushes your most recent commit
+`task` is a shell script that contains project commands. For example,
+`./task dev` starts the app locally, and `./task deploy` pushes your most recent commit
 to the server. See `README.md` for a list of all the commands.
 
 `config.sh` contains configuration for `task`, such as the project's main

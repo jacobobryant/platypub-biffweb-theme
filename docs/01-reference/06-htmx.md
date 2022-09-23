@@ -1,8 +1,8 @@
 ---
-title: Htmx
+title: htmx
 ---
 
-[Htmx](https://htmx.org/) allows us to create interactive user interfaces
+[htmx](https://htmx.org/) allows us to create interactive user interfaces
 without JavaScript (or ClojureScript). It works by returning snippets of HTML
 from the server in response to user actions. For example, the following code will cause
 the button to be replaced with some text after it's clicked:
@@ -68,7 +68,7 @@ a transaction listener&mdash;see the next section.)
 
 You can also use htmx's companion library
 [hyperscript](https://hyperscript.org/) to do lightweight frontend scripting.
-Htmx is good when you need to contact the server anyway; hyperscript is good
+htmx is good when you need to contact the server anyway; hyperscript is good
 when you don't. Our previous button example could be done with hyperscript
 instead of htmx:
 
@@ -85,5 +85,5 @@ instead of htmx:
 
 See also:
 
- - [Htmx documentation](https://htmx.org/docs/)
+ - [htmx documentation](https://htmx.org/docs/)
  - [Hyperscript documentation](https://hyperscript.org/docs/)

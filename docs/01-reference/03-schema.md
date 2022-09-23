@@ -26,10 +26,10 @@ In our Malli schema, we'll first define schemas for each of the user document's 
    ...})
 ```
 
-For the schema map values, Malli has a handful of [type
-schemas](https://github.com/metosin/malli#mallicoretype-schemas) like `:uuid`
-and `:string` above, and it also supports [predicate
-schemas](https://github.com/metosin/malli#mallicorepredicate-schemas) like
+For the schema map values, Malli has a handful of
+[type schemas](https://github.com/metosin/malli#mallicoretype-schemas) like `:uuid`
+and `:string` above, and it also supports
+[predicate schemas](https://github.com/metosin/malli#mallicorepredicate-schemas) like
 `number?` above.
 
 Once our attributes have been defined, we can combine them into a schema for

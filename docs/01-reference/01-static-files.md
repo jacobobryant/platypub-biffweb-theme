@@ -22,7 +22,8 @@ after you request a sign-in link:
     [:div
      "Your sign-in request failed. There are several possible reasons:"]
     [:ul
-     [:li "You opened the sign-in link on a different device or browser than the one you requested it on."]
+     [:li "You opened the sign-in link on a different device "
+      "or browser than the one you requested it on."]
      [:li "We're not sure you're a human."]
      [:li "We think your email address is invalid or high risk."]
      [:li "We tried to email the link to you, but it didn't work."]]))

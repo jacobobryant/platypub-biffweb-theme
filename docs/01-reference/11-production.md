@@ -44,7 +44,7 @@ Some notes:
 
 After you've deployed at least once, you can continue developing the production
 system while it's running. You'll need to install
-[fswatch](https://emcrisostomo.github.io/fswatch/getting.html). (`sudo apt
-install fswatch` on Ubuntu, `brew install fswatch` on Mac.) Then run `./task
-prod-dev`. Whenever you save a file, it'll get copied to the server and
+[fswatch](https://emcrisostomo.github.io/fswatch/getting.html). (
+`sudo apt install fswatch` on Ubuntu, `brew install fswatch` on Mac.) Then run
+`./task prod-dev`. Whenever you save a file, it'll get copied to the server and
 evaluated. See `README.md` for more commands.
