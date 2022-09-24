@@ -92,9 +92,9 @@
 (def nav-options
   [["Docs" "/docs/"]
    ["Blog" "/newsletter/"]
-   ["API" "/api/com.biffweb.html"]
-   ["Repo" "https://github.com/jacobobryant/biff"]
-   ["Community" "/community/"]
+   ;["API" "/api/com.biffweb.html"]
+   ;["Repo" "https://github.com/jacobobryant/biff"]
+   ;["Community" "/community/"]
    ["Consulting" "/consulting/"]])
 
 (defn navbar
@@ -425,15 +425,13 @@
   (for [f (file-seq (io/file "docs"))
         :when (.isFile f)
         :let [content (slurp f)
-              front-matter (-> (re-find #"(?s)---([^(---)]*)---" content)
-                               second
-                               yaml/parse-string)
-              content (-> (str/split content #"---" 3)
-                          last
-                          str/trim
-                          (md/md-to-html-string :heading-anchors true
-                                                :code-style #(str "class=\"language-" % "\""))
-                          not-empty)
+              [front-matter content] (->> (str/split content #"---")
+                                         (keep (comp not-empty str/trim)))
+              front-matter (yaml/parse-string front-matter)
+              content (some-> content
+                              (md/md-to-html-string
+                               :heading-anchors true
+                               :code-style #(str "class=\"language-" % "\"")))
               md-path (str/replace (.getPath f) "docs/" "")
               path (-> md-path
                        (str/replace #"\d\d-" "")
@@ -531,7 +529,9 @@
           {:class (if (= path href)
                     "border-accent text-accent-dark font-bold"
                     "font-medium")}
-          [:a.hover:underline {:href href} title]])))]])
+          [:a.hover:underline {:href href} title]])
+       (when (not-empty children)
+         [:div.h-3])))]])
 
 (defn sidebar-right [opts]
   nil)
@@ -544,6 +544,26 @@
   [:svg.w-3.opacity-50 {:xmlns "http://www.w3.org/2000/svg", :viewbox "0 0 384 512"}
    [:path {:d "M342.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L274.7 256 105.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"}]])
 
+(defn render-api [{:keys [api-sections doc] :as opts}]
+  (list
+   [:p "All functions are located in the " [:code "com.biffweb"] " namespace."]
+   (for [{:keys [arglists doc line name]} (api-sections (:section doc))
+         :when (not-empty doc)]
+     (list
+      [:div.flex.items-baseline
+       [:h3 name]
+       [:div.flex-grow]
+       [:a.text-sm {:href (str "https://github.com/jacobobryant/biff/blob/master/src/com/biffweb.clj#L"
+                               (dec line))}
+        "View source"]]
+      [:pre.bg-white {:style {:padding "0"}}
+       [:code
+        (for [arglist arglists]
+          (with-out-str
+           (pprint (concat [name] arglist))))]]
+      [:pre.text-sm
+       [:code.language-plaintext (str/replace doc #"(?s)\n  " "\n")]]))))
+
 (defn render-doc [{:keys [doc] :as opts}]
   (base-html
    (assoc opts :base/title (str (:title doc) " | Biff"))
@@ -551,10 +571,12 @@
    [:div.mx-auto.p-3.flex-grow.w-full.max-w-screen-lg
     [:div.flex.gap-x-2.sm:gap-x-4
      (sidebar-left opts)
-     [:div.min-w-0
+     [:div.min-w-0.w-full
       [:div.markdown-body
        [:h1 (:title doc)]
-       (raw-string (:html doc))]
+       (if-some [f (:render doc)]
+         ((requiring-resolve (symbol f)) opts)
+         (raw-string (:html doc)))]
       [:div.h-10]
       [:hr]
       [:div.flex.my-5.items-end
@@ -563,6 +585,7 @@
                [:div.w-2]
                [:div.leading-none
                 [:div.text-sm.text-gray-600 "Prev"]
+                [:div.h-1]
                 [:a.font-bold.text-lg.leading-none.hover:underline
                  {:href (:href prev)}
                  (:title prev)]]))
@@ -570,6 +593,7 @@
        (when-some [next (:next doc)]
          (list [:div.leading-none
                 [:div.text-sm.text-gray-600.text-right "Next"]
+                [:div.h-1]
                 [:a.font-bold.text-lg.leading-none.hover:underline
                  {:href (:href next)}
                  (:title next)]]
@@ -594,9 +618,13 @@
         docs (read-docs)
         doc-nav-data (doc-nav-data docs)
         docs (assoc-nav-siblings docs doc-nav-data)
+        api-sections (->> (edn/read-string (slurp (io/resource "com/biffweb/theme/api.edn")))
+                          (sort-by :line)
+                          (group-by :section))
         opts (-> opts
                  (merge {:dev false ;true
-                         :doc-nav-data doc-nav-data})
+                         :doc-nav-data doc-nav-data
+                         :api-sections api-sections})
                  (update-in [:site :redirects] str "\n/docs/ " (:href (first doc-nav-data)) "\n"))]
     (common/redirects! opts)
     (common/netlify-subscribe-fn! opts)

@@ -46,7 +46,7 @@ deploy to. `config.edn` contains configuration for the application.
 `deps.edn` by default defines a single dependency: `com.biffweb/biff`. This
 library is aliased as `biff` in most namespaces.
 
-`setup.sh` is a script for provisioning an Ubuntu server. See [Production](#production).
+`setup.sh` is a script for provisioning an Ubuntu server. See [Production](/docs/reference/production/).
 
 ## Code organization
 
