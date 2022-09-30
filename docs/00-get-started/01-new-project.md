@@ -36,7 +36,7 @@ can connect to the nREPL server started by `./task dev`. See
 [Connecting to a Running nREPL Server](https://docs.cider.mx/cider/basics/up_and_running.html#connect-to-a-running-nrepl-server)
 in the CIDER docs.
 
-This does mean that CIDER will not be able to decide what version of the nREPL
+This does mean that CIDER will not be able to decide which version of the nREPL
 server dependencies to use. If you run into problems, you'll need to set the
 versions manually in `deps.edn`:
 

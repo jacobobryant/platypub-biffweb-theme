@@ -3,16 +3,10 @@ title: Introduction
 ---
 
 Biff is designed to make web development with Clojure fast and easy without
-compromising on simplicity. It prioritizes small-to-medium sized projects.
-
-Biff has two parts: a library and a template project. As much code as
-possible is written as library code, exposed under the `com.biffweb` namespace.
-This includes a lot of high-level helper functions for other libraries.
-
-The template project contains the framework code&mdash;the stuff that glues all
-the libraries together. When you start a new Biff project, the template project code is
-copied directly into your project directory, and the library is added as a regular
-dependency.
+compromising on simplicity. Biff
+aims to provide as much functionality as possible out-of-the-box, while making
+it easy to swap out, modify, or remove parts in cases where you need something
+different. It prioritizes small-to-medium sized projects. 
 
 Some of Biff's most distinctive features:
 
@@ -41,5 +35,8 @@ Other things that Biff wraps/includes:
 - [Chime](https://github.com/jarohen/chime) for scheduling tasks.
 - A minimalist, 15-line dependency injection framework, similar in spirit to Component.
 
-We use Biff over at [The Sample](https://thesample.ai/), a relatively young
-two-person business. It has about 13k lines of code.
+Projects built with Biff:
+
+ - [The Sample](https://thesample.ai/), a newsletter recommender system.
+ - [Yakread](https://yakread.com/), an ML-driven reader app.
+ - [Platypub](https://biffweb.com/p/announcing-platypub/), a blogging + newsletter platform.

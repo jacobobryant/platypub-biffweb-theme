@@ -2,6 +2,15 @@
 title: Project Structure
 ---
 
+Biff has two parts: a library and a template project. As much code as
+possible is written as library code, exposed under the `com.biffweb` namespace.
+This includes a lot of high-level helper functions for other libraries.
+
+The template project contains the framework code&mdash;the stuff that glues all
+the libraries together. When you start a new Biff project, the template project code is
+copied directly into your project directory, and the library is added as a regular
+dependency.
+
 A new Biff project will look like this:
 
 (Throughout these docs, we'll assume you selected `com.example` for the main

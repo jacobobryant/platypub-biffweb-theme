@@ -89,8 +89,9 @@
      [:div.bg-white
       {:class "h-[4px] w-[30px] my-[6px]"}])])
 
-(def nav-options
-  [["Docs" "/docs/"]
+(defn nav-options [{:keys [docs-href]
+                    :or {docs-href "/docs/"}}]
+  [["Docs" docs-href]
    ["Blog" "/newsletter/"]
    ;["API" "/api/com.biffweb.html"]
    ;["Repo" "https://github.com/jacobobryant/biff"]
@@ -98,15 +99,15 @@
    ["Consulting" "/consulting/"]])
 
 (defn navbar
-  ([] (navbar {:class "max-w-screen-lg"}))
+  ([] (navbar {:class "max-w-screen-md"}))
   ([opts]
    (list
     [:div.bg-primary.py-2
      [:div.flex.mx-auto.items-center.text-white.gap-4.text-lg.flex-wrap.px-3
-      opts
+      (merge {:class "max-w-screen-md"} opts)
       logo
       [:div.flex-grow]
-      (for [[label href] nav-options]
+      (for [[label href] (nav-options opts)]
         [:a.hover:underline.hidden.sm:block
          {:href href
           :target (when (= label "API")
@@ -114,7 +115,7 @@
          label])
       hamburger-icon]]
     [:div#nav-menu.bg-primary.px-5.py-2.text-white.text-lg.hidden.transition-all.ease-in-out.sm:hidden
-     (for [[label href] nav-options]
+     (for [[label href] (nav-options opts)]
        [:div.my-2 [:a.hover:underline.text-lg {:href href} label]])])))
 
 (defn byline [{:keys [published-at byline/card]}]
@@ -214,7 +215,9 @@
 (defn post-page [{:keys [site post account] :as opts}]
   (base-html
     opts
-    (navbar)
+    (navbar (assoc opts :class (if ((:tags post) "video")
+                                 "max-w-screen-lg"
+                                 "max-w-screen-sm")))
     [:div.mx-auto.p-3.text-lg.flex-grow.w-full
      {:class (if ((:tags post) "video")
                "max-w-screen-lg"
@@ -245,7 +248,7 @@
 (defn subscribed-page [opts]
   (base-html
     (assoc opts :base/title "You're subscribed to Biff: The Newsletter")
-    (navbar)
+    (navbar opts)
     [:div.max-w-screen-lg.mx-auto.p-3.w-full
      [:h1.font-bold.text-2xl "You're subscribed"]
      [:div "Check your inbox for a welcome email."]]))
@@ -253,7 +256,7 @@
 (defn newsletter-page [{:keys [posts] :as opts}]
   (base-html
     (assoc opts :base/title "Biff: The Newsletter")
-    (navbar)
+    (navbar (assoc opts :class "max-w-screen-sm"))
     (subscribe-form {:bg :light})
     [:div.bg-gray-200.h-full.flex-grow
      [:div.h-10]
@@ -277,17 +280,17 @@
 (defn landing-page [opts]
   (base-html
     opts
-    (navbar)
+    (navbar opts)
     [:div.py-10.flex.flex-col.items-center.flex-grow.bg-center.px-3
-     [:h1.font-bold.leading-tight.text-4xl.text-center
-      {:class "max-w-[300px] sm:max-w-none"}
+     [:h1.font-bold.leading-tight.text-3xl.md:text-4xl.text-center
+      {:class "max-w-[360px] sm:max-w-none leading-[1.15]"}
       "Biff helps solo developers move fast."]
      [:div.h-7]
-     [:a.bg-accent.hover:bg-accent-dark.text-white.text-center.py-2.px-8.rounded.font-semibold.text-xl.sm:text-2xl
-      {:href "/docs/"}
+     [:a.bg-accent.hover:bg-accent-dark.text-white.text-center.py-2.px-8.rounded.font-semibold.text-xl.md:text-2xl
+      {:href (:docs-href opts "/docs/")}
       "Get Started"]
      [:div.h-7]
-     [:div.mx-auto.text-xl.sm:text-2xl.text-center.max-w-xl
+     [:div.mx-auto.text-xl.md:text-2xl.text-center.max-w-xl
       "Biff is a simple, easy, full-stack web framework for Clojure. "
       "Launch new projects quickly without getting bogged down in complexity later."]
      [:div.h-10]
@@ -296,7 +299,7 @@
        "bash <(curl -s https://biffweb.com/new-project.sh)"]]
     [:div.bg-gray-200.py-5
      [:div.max-w-screen-md.mx-auto.px-2
-      [:div.text-lg.sm:text-xl.text-center.mx-auto
+      [:div.text-lg.md:text-xl.text-center.mx-auto
        {:class "max-w-[520px]"}
        "Biff curates libraries and tools from across the ecosystem "
        "and composes them into one polished whole."]
@@ -325,7 +328,7 @@
         [:div "Whenever you save a file, any new code will be immediately hot swapped into the server."
          " (Don't worry, it's optional!)"]]]
       [:div.h-5]
-      [:div.sm:text-lg.text-center
+      [:div.md:text-lg.text-center
        "...and several other carefully chosen pieces. Biff clocks in at under 2,000 lines of code. "
        "It's designed to be taken apart and modified, so it doesn't get in the "
        "way as your needs evolve."]
@@ -356,7 +359,7 @@
                  :style {:border-radius "50%"}}]])]
       [:div.h-8]
       [:div.flex.justify-center
-       [:a.bg-accent.hover:bg-accent-dark.text-white.text-center.py-2.px-4.rounded.sm:text-lg
+       [:a.bg-accent.hover:bg-accent-dark.text-white.text-center.py-2.px-4.rounded.md:text-lg
         {:href "https://github.com/sponsors/jacobobryant"}
         "Support Biff"]]
       [:div.h-8]]]))
@@ -387,7 +390,7 @@
 (defn render-page [{:keys [site page account] :as opts}]
   (base-html
    opts
-   (navbar)
+   (navbar opts)
    [:div.mx-auto.p-3.text-lg.flex-grow.w-full.max-w-screen-md
     [:div.post-content (raw-string (:html page))]]))
 
@@ -517,7 +520,9 @@
   [:div
    [:div.w-fit.sticky.top-0.sm:whitespace-nowrap
     [:div.h-3]
-    (for [{:keys [href title children has-content]} doc-nav-data]
+    (for [{:keys [href title children has-content]} doc-nav-data
+          :let [children (when (some #(= path (:href %)) children)
+                           children)]]
       (list
        [:div.pb-3
         {:class (if (and has-content (= path href))
@@ -567,8 +572,9 @@
 (defn render-doc [{:keys [doc] :as opts}]
   (base-html
    (assoc opts :base/title (str (:title doc) " | Biff"))
-   (navbar {:class "max-w-screen-lg"})
-   [:div.mx-auto.p-3.flex-grow.w-full.max-w-screen-lg
+   (navbar (assoc opts :class "max-w-[900px]"))
+   [:div.mx-auto.p-3.flex-grow.w-full
+    {:class "max-w-[900px]"}
     [:div.flex.gap-x-2.sm:gap-x-4
      (sidebar-left opts)
      [:div.min-w-0.w-full
@@ -576,8 +582,12 @@
        [:h1 (:title doc)]
        (if-some [f (:render doc)]
          ((requiring-resolve (symbol f)) opts)
-         (raw-string (:html doc)))]
-      [:div.h-10]
+         (raw-string (:html doc)))
+       [:div.h-10]
+       [:div.text-center.italic.text-sm
+        "Have a question? Join the #biff channel on "
+        [:a {:href "http://clojurians.net" :target "_blank"} "Clojurians Slack"] "."]]
+      [:div.h-2]
       [:hr]
       [:div.flex.my-5.items-end
        (when-some [prev (:prev doc)]
@@ -591,8 +601,8 @@
                  (:title prev)]]))
        [:div.flex-grow]
        (when-some [next (:next doc)]
-         (list [:div.leading-none
-                [:div.text-sm.text-gray-600.text-right "Next"]
+         (list [:div.leading-none.text-right
+                [:div.text-sm.text-gray-600 "Next"]
                 [:div.h-1]
                 [:a.font-bold.text-lg.leading-none.hover:underline
                  {:href (:href next)}
@@ -622,9 +632,10 @@
                           (sort-by :line)
                           (group-by :section))
         opts (-> opts
-                 (merge {:dev false ;true
+                 (merge {:dev false
                          :doc-nav-data doc-nav-data
-                         :api-sections api-sections})
+                         :api-sections api-sections
+                         :docs-href (:href (first doc-nav-data))})
                  (update-in [:site :redirects] str "\n/docs/ " (:href (first doc-nav-data)) "\n"))]
     (common/redirects! opts)
     (common/netlify-subscribe-fn! opts)
