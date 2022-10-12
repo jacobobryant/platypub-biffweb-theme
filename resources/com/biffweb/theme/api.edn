@@ -1,30 +1,30 @@
 ({:arglists ([{:keys [hidden], :as opts} & body]),
   :doc
   "Returns a [:form ...] element.\n\n  hidden:  A map from names to values, which will be converted to\n           [:input {:type \"hidden\" ...}] fields.\n  opts:    Options for the :form element (with hidden removed).\n\n  Sets :method to \"post\" by default, and includes a CSRF token (via\n  ring.middleware.anti-forgery/*anti-forgery-token*).",
-  :line 586,
+  :line 543,
   :name form,
   :section "Rum"}
  {:arglists ([init]),
   :doc
   "Starts a system from an initial system map.\n\n  Stores the system in the com.biffweb/system atom. See\n  https://biffweb.com/docs/#system-composition",
-  :line 23,
+  :line 24,
   :name start-system,
   :section "Util"}
  {:arglists ([& ms]),
   :doc "Like merge, but throws an exception if any maps share keys.",
-  :line 65,
+  :line 81,
   :name safe-merge,
   :section "Util"}
  {:arglists ([& args]),
   :doc
   "Runs a shell command.\n\n  Returns the output if successful; otherwise, throws an exception.",
-  :line 58,
+  :line 59,
   :name sh,
   :section "Util"}
  {:arglists ([date format]),
   :doc
   "Passes date through format-date and parse-date, in order to remove any\n  information not captured in the format.\n\n  For example:\n  (crop-date #inst \"2022-03-27T09:13:34.182-00:00\" \"yyyy\")\n  => #inst \"2022-01-01T08:00:00.000-00:00\"",
-  :line 634,
+  :line 591,
   :name crop-date,
   :section "Time"}
  {:arglists
@@ -33,94 +33,127 @@
      :as sys}]),
   :doc
   "A Biff component that runs code when files are changed, via Beholder.\n\n  See https://github.com/nextjournal/beholder.\n\n  on-save:  A single-argument function to call whenever a file is saved.\n            Receives the system map as a parameter. Subsequent file saves\n            that occur within one second are ignored.\n  paths:    A collection of root directories to monitor for file changes.\n  exts:     If exts is non-empty, files that don't end in one of the extensions\n            will be ignored.",
-  :line 215,
+  :line 662,
   :name use-beholder,
   :section "Misc"}
+ {:arglists ([]),
+  :doc
+  "Loads new dependencies in deps.edn via tools.deps.alpha.\n\n  Ensures that a DynamicClassLoader is available so that this works even when\n  not evaluated from the repl. See\n  https://ask.clojure.org/index.php/10761/clj-behaves-different-in-the-repl-as-opposed-to-from-a-file",
+  :line 203,
+  :name add-libs,
+  :section "Util"}
  {:arglists ([handler]),
   :doc
   "If handler returns a vector, pass it to rum.core/render-static-markup and return a 200 response.",
-  :line 346,
+  :line 239,
   :name wrap-render-rum,
   :section "Middleware"}
  {:doc "A Rum data structure for a non-breaking space.",
-  :line 555,
+  :line 512,
   :name nbsp,
   :section "Rum"}
  {:arglists ([t h1 h2]),
   :doc
   "Returns true if t is between the hours of h1 and h2 UTC.\n\n  For example:\n  (between-hours? #inst \"2022-03-27T14:18:34.360-00:00\" 14 16)\n  => true",
-  :line 656,
+  :line 613,
   :name between-hours?,
   :section "Time"}
  {:arglists ([length]),
   :doc
   "Generates a random byte array and returns it as a base64 string.\n\n  The bytes are generated with buddy.core.nonce/random-bytes, which uses a\n  secure random number generator.",
-  :line 312,
+  :line 758,
   :name generate-secret,
   :section "Misc"}
  {:arglists ([& args]),
   :doc "Alias of clojure.pprint/pprint",
-  :line 16,
+  :line 17,
   :name pprint,
   :section "Util"}
+ {:arglists ([sys make-tx]),
+  :doc
+  "Submits an XT transaction, retrying up to three times if there is contention.\n  Blocks until the transaction is indexed or aborted.\n\n  make-tx is a one-argument function that takes the system map (sys) and\n  returns an XT transaction. The :biff/db and :biff/now keys in sys will be\n  updated before each time make-tx is called.",
+  :line 445,
+  :name submit-with-retries,
+  :section "XTDB"}
  {:arglists ([f & components]),
   :doc
   "Passes the system map to components only if (f system) is true.\n\n  See https://biffweb.com/docs/#system-composition",
-  :line 78,
+  :line 94,
   :name use-when,
   :section "Util"}
  {:arglists ([& body]),
   :doc
   "Ensures that print output doesn't get swallowed by e.g. an editor nrepl plugin.\n\n  Binds *out*, *err* and *flush-on-newline* to their root values.\n\n  (fix-print\n    (println \"hello\"))",
-  :line 170,
+  :line 186,
   :name fix-print,
   :section "Util"}
+ {:arglists
+  ([{:keys [required optional closed wildcards],
+     :or {closed true},
+     :as opts}]),
+  :doc
+  "Returns a [:map ...] schema for use with Malli.\n\n  Example:\n\n  (doc-schema\n   {:required [:user/name\n               [:user/email :string]]\n    :optional [[:user/phone :string]]})\n  =>\n  [:map\n   {:closed true}\n   :user/name\n   [:user/email :string]\n   [:user/phone {:optional true} :string]]\n\n  wildcards is map from namespace symbols to predicate functions. Any key-value\n  pairs in the map with a matching key namespace will be valid iff the value\n  passes the predicate function. For example:\n\n  (doc-schema\n   {:required [[:user/email :string]]\n    :wildcards {'user.signup-params string?}})\n\n  ;; Valid:\n  {:user/email \"hello@example.com\"\n   :user.signup-params/utm_source \"twitter\"}",
+  :line 791,
+  :name doc-schema,
+  :section "Misc"}
  {:arglists ([handler opts]),
   :doc
   "Wraps handler with various middleware which don't depend on the system map.\n\n  Includes wrap-log-requests, wrap-internal-error, wrap-resource, and\n  Muuntaja's wrap-params and wrap-format (see https://github.com/metosin/muuntaja).\n  opts is passed to wrap-resource and wrap-internal-error.\n\n  This function can wrap a Ring handler outside of a call to biff/start-system,\n  For example:\n\n  (def handler (wrap-inner-defaults ... {}))\n\n  (defn start []\n    (biff/start-system\n      {:biff/handler #'handler\n       ...}))\n\n  This way, handler and its middleware can be redefined from the repl without\n  needing to restart the system.",
-  :line 415,
+  :line 306,
   :name wrap-inner-defaults,
   :section "Middleware"}
  {:doc "A Rum data structure for an em dash.",
-  :line 547,
+  :line 504,
   :name emdash,
   :section "Rum"}
  {:arglists ([date seconds]),
   :doc
   "Returns a new java.util.Date with the given number of seconds added.",
-  :line 665,
+  :line 622,
   :name add-seconds,
   :section "Time"}
- {:arglists ([{:biff.chime/keys [tasks], :as sys}]),
+ {:arglists ([{:keys [biff/features biff.chime/tasks], :as sys}]),
   :doc
-  "A Biff component for running scheduled tasks with Chime.\n\n  See https://github.com/jarohen/chime. tasks is a collection of maps, for\n  example:\n\n  [{:task (fn [system] (println \"hello there\"))\n    :schedule (iterate #(biff/add-seconds % 60) (java.util.Date.))}]\n\n  This value of tasks would print \"hello there\" every 60 seconds. task is a\n  single-argument function that receives the system map. schedule is a\n  zero-argument function that returns a (possibly infinite) sequence of times\n  at which to run the task function.",
-  :line 271,
+  "A Biff component for running scheduled tasks with Chime (https://github.com/jarohen/chime)\n\n  features: A var containing a collection of feature maps. Each feature map may\n            contain a :tasks key, which contains a collection of task maps.\n  tasks:    Deprecated. Use features instead. If set, takes precedence over\n            features.\n\n  For example:\n  (def features\n    {:tasks [{:task (fn [system] (println \"hello there\"))\n              :schedule (iterate #(biff/add-seconds % 60) (java.util.Date.))}]})",
+  :line 718,
   :name use-chime,
   :section "Misc"}
  {:arglists
   ([{:keys [mailersend/api-key mailersend/defaults], :as sys} opts]),
   :doc
   "Sends an email with MailerSend.\n\n  See https://developers.mailersend.com/api/v1/email.html#send-an-email. Does a\n  POST request on the /v1/email endpoint and returns the X-Message-Id response\n  header on success. On failure, prints an error message and returns false.\n\n  opts is a map which will be converted to JSON and included as the body of the\n  request. defaults is a map from paths to default values. It will be combined\n  with opts. For example:\n\n  (mailersend {:mailersend/api-key \"...\"\n               :mailersend/defaults {[:from :email] \"hello@mail.example.com\"\n                                     [:from :name] \"My Application\"\n                                     [:reply_to :email] \"hello@example.com\"\n                                     [:reply_to :name] \"My Application\"}}\n              {:to [{:email \"recipient@example.com\"}]\n               :subject \"Some subject\"\n               :text \"Some text\"\n               :from {:name \"This will override the default value of 'My Application'\"}})",
-  :line 287,
+  :line 733,
   :name mailersend,
   :section "Misc"}
+ {:arglists ([sep xs]),
+  :doc
+  "Returns a sequence where the elements of coll are separated by sep.",
+  :line 76,
+  :name join,
+  :section "Util"}
  {:doc
   "Same as \"yyyy-MM-dd'T'HH:mm:ss.SSSXXX\", for use with parse-date and format-date.",
-  :line 616,
+  :line 573,
   :name rfc3339,
   :section "Time"}
  {:arglists ([{:keys [router routes on-error], :as opts}]),
   :doc
   "Convenience wrapper for reitit.ring/ring-handler.\n\n  Only one of router or routes needs to be given. If you pass in routes, it\n  will be wrapped with (reitit.ring/router routes). on-error is an optional\n  Ring handler. The request map passed to it will include a :status key (either\n  404, 405, or 406).\n\n  Includes reitit.ring/redirect-trailing-slash-handler.",
-  :line 231,
+  :line 678,
   :name reitit-handler,
   :section "Misc"}
+ {:arglists ([sys queue-id job]),
+  :doc
+  "Convenience function which calls (.add (get-in sys [:biff/queues queue-id]) job)",
+  :line 881,
+  :name submit-job,
+  :section "Queues"}
  {:arglists
   ([{:biff/keys [host port handler],
      :or {host "localhost", port 8080},
      :as sys}]),
   :doc "A Biff component that starts a Jetty web server.",
-  :line 243,
+  :line 690,
   :name use-jetty,
   :section "Misc"}
  {:arglists
@@ -130,51 +163,63 @@
      :as opts}]),
   :doc
   "Serves static resources with ring.middleware.resource/wrap-resource-request.\n\n  root:         The resource root from which static files should be served.\n  index-files:  See wrap-index-files.\n\n  Checks for a static resource first. If none is found, passes the request to\n  handler.",
-  :line 357,
+  :line 250,
   :name wrap-resource,
   :section "Middleware"}
- {:arglists ([db k v]),
+ {:doc
+  "A map of Biff-provided transaction functions. See use-xt and save-tx-fns!\n\n  Includes the following tx fns:\n\n  :biff/ensure-unique - Aborts the transaction if more than one document\n  contains the given key-value pairs. For example:\n\n  (biff/submit-tx sys\n    [{:db/doc-type :user\n      :db/op :update\n      :xt/id user-id\n      :user/name \"example\"}\n     [:xtdb.api/fn :biff/ensure-unique {:user/name \"example\"}]])",
+  :line 476,
+  :name tx-fns,
+  :section "XTDB"}
+ {:arglists ([db & kvs]),
   :doc
-  "Returns the ID of the first document found with the given key and value.\n\n  For example:\n  (lookup db :user/email \"hello@example.com\")\n  => #uuid \"...\"",
-  :line 518,
+  "Returns the ID of the first document found with the given key(s) and value(s).\n\n  For example:\n  (lookup db :user/email \"hello@example.com\")\n  => #uuid \"...\"",
+  :line 417,
   :name lookup-id,
   :section "XTDB"}
  {:arglists ([db query & args]),
   :doc
   "Convenience wrapper for xtdb.api/q.\n\n  If the :find value is not a vector, results will be passed through\n  (map first ...). Also throws an exception if (count args) doesn't match\n  (count (:in query)).",
-  :line 491,
+  :line 390,
   :name q,
+  :section "XTDB"}
+ {:arglists
+  ([{:keys [biff/now biff/db biff/malli-opts], :as sys} biff-tx]),
+  :doc
+  "Converts the given Biff transaction into an XT transaction.\n\n  The elements of biff-tx may be maps (in which case they are treated as Biff\n  operations) or vectors (in which case they are treated as XT operations). For\n  example:\n\n  [{:db/doc-type :user\n    :xt/id #uuid \"...\"\n    :user/name \"example\"}\n   [:xtdb.api/put {:xt/id #uuid \"...\"}]]\n\n  biff-tx may optionally be a function which takes sys and returns a Biff\n  transaction.\n\n  See https://biffweb.com/docs/reference/transactions.",
+  :line 426,
+  :name biff-tx->xt,
   :section "XTDB"}
  {:arglists ([html]),
   :doc
   "Returns {:dangerouslySetInnerHTML {:__html html}}, for use with Rum.",
-  :line 542,
+  :line 499,
   :name unsafe,
   :section "Rum"}
  {:arglists ([token secret]),
   :doc
   "Convenience wrapper for buddy.sign.jwt/decrypt.\n\n  token is a string as returned by jwt-encrypt. secret is a base64-encoded\n  string that was used to encrypt token. Returns the claims passed to\n  jwt-encrypt. Returns nil if the token is invalid or expired.",
-  :line 262,
+  :line 709,
   :name jwt-decrypt,
   :section "Misc"}
  {:arglists
-  ([{:biff.xtdb/keys [topology kv-store dir opts], :as sys}]),
+  ([{:biff.xtdb/keys [topology kv-store dir opts tx-fns], :as sys}]),
   :doc
-  "A Biff component that starts an XTDB node.\n\n  Sets :biff.xtdb/node on the system map. topology, kv-store, dir and opts are\n  passed to start-node. Any keys matching :biff.xtdb.jdbc/* or\n  :biff.xtdb.jdbc-pool/* are passed in as jdbc-spec and pool-opts,\n  respectively.",
-  :line 464,
+  "A Biff component that starts an XTDB node.\n\n  Sets :biff.xtdb/node on the system map. topology, kv-store, dir, opts and\n  tx-fns are passed to start-node. Any keys matching :biff.xtdb.jdbc/* or\n  :biff.xtdb.jdbc-pool/* are passed in as jdbc-spec and pool-opts,\n  respectively.",
+  :line 357,
   :name use-xt,
   :section "XTDB"}
- {:line 21, :name system, :section "Util"}
+ {:line 22, :name system, :section "Util"}
  {:arglists ([sys]),
   :doc
   "A Biff component that merges temporary secrets into the system map if needed.\n\n  Sets :biff.middleware/cookie-secret and :biff/jwt-secret if they are nil. The\n  secrets will not persist if the system is restarted. Can be useful in\n  development. e.g. a config.edn.TEMPLATE can be checked into a project's\n  repository without secrets set. Contributers can run the project by copying\n  the file to config.edn, without needing to modify it.\n\n  This component should not be relied upon in production; instead you should\n  save secrets in config.edn. This is done automatically at project setup time\n  for new Biff projects.",
-  :line 320,
+  :line 766,
   :name use-random-default-secrets,
   :section "Misc"}
  {:arglists ([families]),
   :doc
   "Returns a link element for requesting families from Google fonts.\n\n  For example:\n  (g-fonts [\"Nunito+Sans:wght@900\"])\n  => [:link {:rel \"stylesheet\", :href ...}]",
-  :line 559,
+  :line 516,
   :name g-fonts,
   :section "Rum"}
  {:arglists
@@ -193,60 +238,69 @@
     contents]),
   :doc
   "Wraps contents in an :html and :body element with various metadata set.\n\n  font-families:  A collection of families to request from Google fonts (see g-fonts).\n  head:           Additional Rum elements to include inside the head.",
-  :line 568,
+  :line 525,
   :name base-html,
   :section "Rum"}
  {:arglists ([]),
   :doc "Same as (java.util.Date.)",
-  :line 611,
+  :line 568,
   :name now,
   :section "Time"}
  {:arglists ([category & [message & [opts]]]),
   :doc
   "Constructs an anomaly.\n\n  Example: (anom :incorrect\n                 \"Invalid parameter\"\n                 {:info \"x should be an integer\"})\n\n  See https://github.com/cognitect-labs/anomalies",
-  :line 107,
+  :line 123,
   :name anom,
   :section "Util"}
  {:arglists ([]),
   :doc
   "Stops the system, refreshes source files, and restarts the system.\n\n  The system is stopped by calling all the functions in (:biff/stop\n  @com.biffweb/system). (:biff/after-refresh @system) is a fully-qualified\n  symbol which will be resolved and called after refreshing. See\n  https://biffweb.com/docs/#system-composition",
-  :line 31,
+  :line 32,
   :name refresh,
   :section "Util"}
  {:arglists ([pages dir]),
   :doc
   "Generate HTML files and write them to a directory.\n\n  pages:  A map from paths to Rum data structures, e.g.\n          {\"/\" [:div \"hello\"]}. Paths that end in / will have index.html\n          appended to them.\n  dir:    A path to the root directory where the files should be saved, e.g.\n          \"target/resources/public\".",
-  :line 598,
+  :line 555,
   :name export-rum,
   :section "Rum"}
  {:arglists ([email]),
   :doc
   "Normalizes an email address to make future lookups easier.\n\n  Trims leading and trailing whitespace and converts to lower case. Returns nil\n  if the email is empty after trimming.",
-  :line 70,
+  :line 86,
   :name normalize-email,
   :section "Util"}
- {:arglists ([db k v]),
+ {:arglists ([db & kvs]),
   :doc
-  "Returns the first document found with the given key and value.\n\n  For example:\n  (lookup db :user/email \"hello@example.com\")\n  => {:xt/id #uuid \"...\", :user/email \"hello@example.com\"}",
-  :line 509,
+  "Returns the first document found with the given key(s) and value(s).\n\n  For example:\n  (lookup db :user/email \"hello@example.com\")\n  => {:xt/id #uuid \"...\", :user/email \"hello@example.com\"}",
+  :line 408,
   :name lookup,
   :section "XTDB"}
+ {:arglists
+  ([{:keys [biff/merge-context-fn],
+     :or {merge-context-fn assoc-db},
+     :as sys}]),
+  :doc
+  "Returns the system map with additional data merged in.\n\n  Calls (merge-context-fn sys). By default, adds an XT database object to\n  :biff/db.",
+  :line 781,
+  :name merge-context,
+  :section "Misc"}
  {:arglists ([{:keys [exp-in], :as claims} secret]),
   :doc
   "Convenience wrapper for buddy.sign.jwt/encrypt.\n\n  Returns a string token. secret is a base64-encoded string used to encrypt the\n  token. A secret can be generated with (com.biffweb/generate-secret 32).\n  exp-in is the number of seconds in the future at which the token should\n  expire. claims is passed to buddy.sign.jwt/encrypt as-is, except that :exp is\n  set based on exp-in.",
-  :line 251,
+  :line 698,
   :name jwt-encrypt,
   :section "Misc"}
  {:arglists ([bindings & body]),
   :doc
   "Like let, but transparently wraps all bindings with delay.\n\n  Examples:\n\n  (macroexpand-1 '(letd [a 1]\n                    a))\n  => (let [a (delay 1)]\n       @a)\n\n  (letd [a (do (println \"a evaluated\")\n               1)\n         {:keys [b]} (do (println \"b evaluated\")\n                         {:b 2})\n         [_ _ c] (do (println \"c evaluated\")\n                     [1 2 3])]\n    (if (even? b)\n      a\n      c))\n  =>\n  (out) b evaluated\n  (out) a evaluated\n  1",
-  :line 144,
+  :line 160,
   :name letd,
   :section "Util"}
  {:arglists ([handler {:biff.middleware/keys [on-error]}]),
   :doc
   "Catches exceptions from handler, prints a stack trace, and returns a 500 response.\n\n  You may optionally provide on-error, a single-argument function that receives\n  the request map with the :status key set to 500. The default implementation\n  returns a plain Internal Server Error message.",
-  :line 371,
+  :line 264,
   :name wrap-internal-error,
   :section "Middleware"}
  {:arglists
@@ -257,13 +311,13 @@
      :as opts}]),
   :doc
   "Wraps handler with ring.middleware.defaults/wrap-defaults.\n\n  secure:          if true, uses ring.middleware.defaults/secure-site-defaults,\n                   else uses site-defaults.\n  cookie-secret:   if provided, session-store is set with\n                   ring.middleware.session.cookie/cookie-store\n  session-store:   passed to wrap-defaults under the [:session :store] path.\n  sesion-max-age:  the number of seconds after which a session should expire.\n\n  Disables CSRF checks. You must wrap non-API routes with\n  ring.middleware.anti-forgery. The Biff project template does this by default.\n  Disables SSL redirects under the assumption that this is handled by e.g.\n  NGINX. Also sets SameSite=Lax explicitly on the session cookie.",
-  :line 385,
+  :line 278,
   :name wrap-ring-defaults,
   :section "Middleware"}
  {:arglists ([handler]),
   :doc
   "Prints execution time, status, request method, uri and query params for each request.",
-  :line 380,
+  :line 273,
   :name wrap-log-requests,
   :section "Middleware"}
  {:arglists
@@ -272,41 +326,60 @@
      :as sys}]),
   :doc
   "Deprecated. Use use-beholder instead.\n\n  use-beholder is a drop-in replacement for use-hawk, except that keys must be\n  prefixed with :biff.beholder/ instead of :biff.hawk/",
-  :line 205,
+  :line 652,
   :name use-hawk,
   :section "Misc"}
  {:arglists ([sys]),
   :doc
   "A Biff component that wraps :biff/handler with middleware that depends on the system map.\n\n  Includes wrap-ring-defaults and wrap-env.",
-  :line 437,
+  :line 328,
   :name use-outer-default-middleware,
   :section "Middleware"}
- {:arglists ([{:keys [biff.xtdb/node], :as sys} biff-tx]),
+ {:arglists ([node tx-fns]),
   :doc
-  "High-level wrapper over xtdb.api/submit-tx.\n\n  See https://biffweb.com/docs/#transactions.",
-  :line 527,
+  "Saves (or updates) the given transaction functions.\n\n  For example, given the map {:foo '(fn ...)}, a transaction of the form\n  [:xtdb.api/put {:xt/id :foo :xt/fn '(fn ...)}] will be submitted.\n\n  If all the given functions are already in the database and haven't been\n  changed, then no transaction will be submitted.",
+  :line 465,
+  :name save-tx-fns!,
+  :section "XTDB"}
+ {:arglists
+  ([{:keys [biff.xtdb/retry biff.xtdb/node], :or {retry true}, :as sys}
+    biff-tx]),
+  :doc
+  "High-level wrapper over xtdb.api/submit-tx. See biff-tx->xt.\n\n  If retry is true, the transaction will be passed to submit-with-retries.",
+  :line 455,
   :name submit-tx,
   :section "XTDB"}
  {:arglists ([db query & args]),
   :doc
   "Calls xtdb.api/open-q and passes a lazy seq of the results to a function.\n\n  Accepts the same arguments as xtdb.api/open-q, except the last argument is a\n  function which must process the results eagerly. Also includes the same\n  functionality as biff/q.",
-  :line 500,
+  :line 399,
   :name lazy-q,
   :section "XTDB"}
  {:arglists ([date & [format]]),
   :doc
   "Formats date using java.text.SimpleDateFormat.\n\n  If format isn't provided, uses rfc3339.",
-  :line 627,
+  :line 584,
   :name format-date,
   :section "Time"}
  {:arglists ([{:keys [biff.xtdb/node], :as sys}]),
   :doc "Sets :biff/db on the system map to (xt/db node)",
-  :line 486,
+  :line 385,
   :name assoc-db,
   :section "XTDB"}
+ {:arglists
+  ([{:keys [biff.queues/result-timeout],
+     :or {result-timeout 20000},
+     :as sys}
+    queue-id
+    job]),
+  :doc
+  "Like submit-job, but returns a promise which will contain the result of the\n  queue operation.\n\n  A :biff/callback key, containing a one-argument function, will be added to\n  the job. The consumer function must pass a result to this callback. If the\n  result is an Exception object, it will be re-thrown on the current thread. An\n  exception will also be thrown if the callback function is not called within\n  the number of milliseconds specified by result-timeout.",
+  :line 886,
+  :name submit-job-for-result,
+  :section "Queues"}
  {:arglists ([& body]),
   :doc "Wraps body in (try ... (catch Exception _ nil))",
-  :line 131,
+  :line 147,
   :name catchall,
   :section "Util"}
  {:arglists
@@ -316,111 +389,130 @@
      :as opts}]),
   :doc
   "If handler returns nil, try again with each index file appended to the URI in turn.",
-  :line 351,
+  :line 244,
   :name wrap-index-files,
   :section "Middleware"}
+ {:arglists
+  ([{:keys
+     [biff/features biff.queues/enabled-ids biff.queues/stop-timeout],
+     :as sys}]),
+  :doc
+  "A Biff component that creates in-memory queues and thread pools to consume them.\n\n  features:     A var containing a collection of feature maps. Each feature map\n                may contain a :queues key, which contains a collection of queue\n                config maps. See below. Required.\n  enabled-ids:  An optional set of queue IDs. If non-nil, only queues in the\n                set will be created.\n  stop-timeout: When shutting down, the number of milliseconds to wait before\n                killing any running job consumers. Default 10000.\n\n  Adds a :biff/queues key to the system map which contains a map of queue IDs\n  to `java.util.concurrent.BlockingQueue`s. Use (.add queue {...}) to submit a\n  job. Jobs are arbitrary maps. Each queue will be consumed by a fixed-size\n  thread pool.\n\n  Queue config maps may have the following keys:\n\n  id:        Used as a key in the :biff/queues map. Required.\n  consumer:  A one-argument function that will receive a job whenever one is\n             available. Receives the system map with :biff/job and :biff/queue\n             keys set. biff/merge-context will be called on the system map\n             before the consumer is called. Required.\n  n-threads: The number of worker threads in the consumer thread pool for this\n             queue. Default 1.\n  queue-fn:  A zero-arg function that returns a BlockingQueue instance. By\n             default, a PriorityBlockingQueue with a custom comparator will be\n             used: jobs may include a :biff/priority key, which defaults to 10.\n             Lower numbers have higher priority.\n\n  Example:\n\n  (defn echo-consumer [{:keys [biff/job] :as sys}]\n    (prn :echo job)\n    (when-some [callback (:biff/callback job)]\n      (callback job)))\n\n  (def features\n    {:queues [{:id :echo\n               :consumer #'echo-consumer}]})\n\n  (biff/submit-job sys :echo {:foo \"bar\"})\n  =>\n  (out) :echo {:foo \"bar\"}\n  true\n\n  @(biff/submit-job-for-result sys :echo {:foo \"bar\"})\n  =>\n  (out) :echo {:foo \"bar\", :biff/callback #function[...]}\n  {:foo \"bar\", :biff/callback #function[...]}",
+  :line 825,
+  :name use-queues,
+  :section "Queues"}
+ {:arglists ([x pred f]),
+  :doc "Convenience fn for (cond-> x (pred x) f)",
+  :line 71,
+  :name pred->,
+  :section "Util"}
  {:arglists ([t1 t2 x unit]),
   :doc
   "Returns true if t2 occurs at least x units after t1.\n\n  unit can be :seconds, :minutes, :hours, :days, or :weeks.",
-  :line 649,
+  :line 606,
   :name elapsed?,
   :section "Time"}
  {:arglists ([handler system]),
-  :doc
-  "Merges the system map with incoming requests and sets :biff/db.\n\n  See assoc-db.",
-  :line 408,
+  :doc "Merges (merge-context system) with incoming requests.",
+  :line 301,
   :name wrap-env,
   :section "Middleware"}
  {:arglists ([date & [format]]),
   :doc
   "Parses date (a string) using java.text.SimpleDateFormat.\n\n  If format isn't provided, uses rfc3339.",
-  :line 620,
+  :line 577,
   :name parse-date,
   :section "Time"}
  {:arglists ([m ns-from ns-to]),
   :doc
   "Selects and renames keys from m based on the namespace.\n\n  Examples:\n\n  (select-ns-as {:foo/a 1, :foo.bar/b 2, :baz/c 3} 'foo 'quux)\n  => {:quux/a 1, :quux.bar/b 2}\n\n  (select-ns-as {:foo/a 1, :foo.bar/b 2, :baz/c 3} 'foo nil)\n  => {:a 1, :bar/b 2}",
-  :line 118,
+  :line 134,
   :name select-ns-as,
   :section "Util"}
  {:arglists
-  ([{:keys [topology dir opts jdbc-spec pool-opts kv-store],
+  ([{:keys [topology dir opts jdbc-spec pool-opts kv-store tx-fns],
      :or {kv-store :rocksdb},
      :as options}]),
   :doc
-  "A higher-level version of xtdb.api/start-node.\n\n  Calls xtdb.api/sync before returning the node.\n\n  topology:   One of #{:standalone :jdbc}.\n  kv-store:   One of #{:rocksdb :lmdb}. Default :rocksdb\n  dir:        A path to store RocksDB instances in.\n  jdbc-spec,\n  pool-opts:  Used only when topology is :jdbc. Passed in as\n              {:xtdb.jdbc/connection-pool\n               {:db-spec jdbc-spec :pool-opts pool-opts ...}}.\n  opts:       Additional options to pass to xtdb.api/start-node.",
-  :line 446,
+  "A higher-level version of xtdb.api/start-node.\n\n  Calls xtdb.api/sync before returning the node.\n\n  topology:   One of #{:standalone :jdbc}.\n  kv-store:   One of #{:rocksdb :lmdb}. Default :rocksdb\n  dir:        A path to store RocksDB instances in.\n  jdbc-spec,\n  pool-opts:  Used only when topology is :jdbc. Passed in as\n              {:xtdb.jdbc/connection-pool\n               {:db-spec jdbc-spec :pool-opts pool-opts ...}}.\n  opts:       Additional options to pass to xtdb.api/start-node.\n  tx-fns:     A map of transaction functions to be saved after indexing\n              finishes. See save-tx-fns!",
+  :line 337,
   :name start-node,
   :section "XTDB"}
  {:arglists ([& body]),
   :doc "Like catchall, but prints exceptions.",
-  :line 136,
+  :line 152,
   :name catchall-verbose,
   :section "Util"}
  {:doc "A Rum data structure for an en dash.",
-  :line 551,
+  :line 508,
   :name endash,
   :section "Rum"}
  {:arglists ([body]),
   :doc
   "Renders body with rum/render-static-markup and returns a 200 response.",
-  :line 537,
+  :line 494,
   :name render,
   :section "Rum"}
  {:arglists ([string]),
   :doc "Converts a base64 string to a byte array.",
-  :line 95,
+  :line 111,
   :name base64-decode,
+  :section "Util"}
+ {:arglists ([m & kvs]),
+  :doc "Like assoc, but skips kv pairs where the value is nil.",
+  :line 66,
+  :name assoc-some,
   :section "Util"}
  {:arglists ([handler]),
   :doc
   "Ensure that websocket upgrade requests pass a CSRF check.\n\n  If the client requests a websocket upgrade, the Origin header must be the\n  same as the :biff/base-url key in the request map. Otherwise a 403\n  response is given.",
-  :line 337,
+  :line 230,
   :name wrap-anti-forgery-websockets,
   :section "Middleware"}
  {:arglists ([date]),
   :doc "Same as (crop-date \"yyyy-MM-dd\")",
-  :line 644,
+  :line 601,
   :name crop-day,
   :section "Time"}
  {:arglists
   ([{:keys [dir exts age-seconds], :or {age-seconds 30}, :as opts}]),
   :doc
   "Deletes files descended from the given directory that are older than a given threshold.\n\n  dir:          A path to a directory.\n  age-seconds:  Files will only be deleted if it's been at least this number of seconds since they\n                were last modified. Defaults to 30 seconds.\n  exts:         An optional collection of filename extentions. If provided, files will only be\n                deleted if they end with one of the extentions.\n\n  For example:\n  (delete-old-files {:dir \"target/resources/public\"\n                     :exts [\".html\"]})",
-  :line 187,
+  :line 212,
   :name delete-old-files,
   :section "Util"}
  {:arglists ([{:keys [biff/eval-paths], :or {eval-paths ["src"]}}]),
   :doc
   "Evaluates any modified files and their dependents via clojure.tools.namespace.",
-  :line 180,
+  :line 196,
   :name eval-files!,
   :section "Util"}
  {:arglists ([bytes]),
   :doc "Converts a byte array to a base64 string.",
-  :line 90,
+  :line 106,
   :name base64-encode,
   :section "Util"}
  {:arglists ([x]),
   :doc
   "Returns true if x is an anomaly.\n\n  See https://github.com/cognitect-labs/anomalies",
-  :line 100,
+  :line 116,
   :name anomaly?,
   :section "Util"}
  {:arglists ([sys]),
   :doc
   "Reads config from (:biff/config sys), and edn file, and merges into sys.\n\n  The config file's contents should be a map from environments to config keys\n  and values, for example:\n\n  {:prod {:host \"example.com\"\n          :port 8080}\n   :dev {:merge [:prod]\n         :host \"localhost\"}}\n\n  The current environment should be stored in the BIFF_ENV environment variable.\n  The default value is `prod`. To inherit config from other environments, set\n  :merge to a sequence of environment keys.",
-  :line 41,
+  :line 42,
   :name use-config,
   :section "Util"}
  {:arglists ([string]),
   :doc "Returns the SHA256 hash of string.",
-  :line 85,
+  :line 101,
   :name sha256,
   :section "Util"}
- {:arglists ([{:keys [biff.xtdb/on-tx biff.xtdb/node], :as sys}]),
+ {:arglists
+  ([{:keys [biff/features biff.xtdb/on-tx biff.xtdb/node], :as sys}]),
   :doc
-  "If on-tx is provided, starts an XTDB transaction listener.\n\n  Calls on-tx whenever a new transaction is successfully indexed. on-tx\n  receives the system map and the transaction, i.e. (on-tx system tx). tx is\n  the transaction as returned by (xtdb.api/open-tx-log node tx-id true). on-tx\n  will not be called concurrently: if a second transaction is indexed while\n  on-tx is still running, use-tx-listener will wait until it finishes.",
-  :line 475,
+  "If on-tx or features provided, starts an XTDB transaction listener.\n\n  features: A var containing a collection of feature maps. Each feature map may\n            contain an :on-tx key.\n  on-tx:    Deprecated. Use features instead. If set, takes precedence over\n            features.\n\n  Calls each on-tx function in features whenever a new transaction is\n  successfully indexed. on-tx receives the system map and the transaction, i.e.\n  (on-tx system tx). tx is the transaction as returned by (xtdb.api/open-tx-log\n  node tx-id true). on-tx will not be called concurrently: if a second\n  transaction is indexed while on-tx is still running, use-tx-listener will\n  wait until it finishes before passing the second transaction.",
+  :line 368,
   :name use-tx-listener,
   :section "XTDB"})

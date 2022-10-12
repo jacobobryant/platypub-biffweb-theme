@@ -6,6 +6,7 @@ Requirements:
 
  - JDK 11 or higher
  - [clj](https://clojure.org/guides/getting_started)
+ - [Babashka](https://github.com/babashka/babashka#installation)
 
 Run this command to create a new Biff project (and if you run into any
 problems, see [Troubleshooting](/docs/reference/troubleshooting/)):

@@ -18,8 +18,9 @@ namespace when creating your project.)
 
 ```text
 ├── README.md
+├── bb.edn
+├── cljfmt-indents.edn
 ├── config.edn
-├── config.sh
 ├── deps.edn
 ├── resources
 │   ├── public
@@ -36,26 +37,25 @@ namespace when creating your project.)
 │       │   │   ├── auth.clj
 │       │   │   ├── home.clj
 │       │   │   └── worker.clj
+│       │   ├── middleware.clj
 │       │   ├── repl.clj
 │       │   ├── schema.clj
 │       │   ├── test.clj
-│       │   └── ui.clj
+│       │   ├── ui.clj
+│       │   └── util.clj
 │       └── example.clj
-└── task
+└── tasks
+    ├── deps.edn
+    └── src
+        └── com
+            └── example
+                └── tasks.clj
 ```
 
-`task` is a shell script that contains project commands. For example,
-`./task dev` starts the app locally, and `./task deploy` pushes your most recent commit
-to the server. See `README.md` for a list of all the commands.
-
-`config.sh` contains configuration for `task`, such as the project's main
-namespace (`com.example` in this case) and the domain name of the server to
-deploy to. `config.edn` contains configuration for the application.
-
-`deps.edn` by default defines a single dependency: `com.biffweb/biff`. This
-library is aliased as `biff` in most namespaces.
-
-`setup.sh` is a script for provisioning an Ubuntu server. See [Production](/docs/reference/production/).
+`config.edn` contains configuration (including secrets) for the application and
+is not checked into git. `setup.sh` is a script for provisioning an Ubuntu
+server (see [Production](/docs/reference/production/)). `bb.edn` defines project
+tasks&mdash;run `bb tasks` to see the available commands.
 
 ## Code organization
 
@@ -76,7 +76,8 @@ particular feature. Each namespace exposes these things via a `features` map:
    :api-routes [...]
    :static {...}
    :tasks [...]
-   :on-tx (fn ...)})
+   :on-tx (fn ...)
+   :queues [...]})
 ```
 
 For example, the `com.example.feat.home` namespace defines a single route for

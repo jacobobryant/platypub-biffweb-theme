@@ -3,10 +3,10 @@ title: Introduction
 ---
 
 Biff is designed to make web development with Clojure fast and easy without
-compromising on simplicity. Biff
-aims to provide as much functionality as possible out-of-the-box, while making
-it easy to swap out, modify, or remove parts in cases where you need something
-different. It prioritizes small-to-medium sized projects. 
+compromising on simplicity. Biff aims to provide as much functionality as
+possible out-of-the-box, while making it easy to swap out, modify, or remove
+parts in cases where you need something different. It prioritizes
+small-to-medium sized projects.
 
 Some of Biff's most distinctive features:
 
@@ -33,10 +33,13 @@ Other things that Biff wraps/includes:
 - [Malli](https://github.com/metosin/malli) for enforcing schema when submitting XTDB transactions.
 - [Buddy](https://funcool.github.io/buddy-sign/latest/) for email link authentication (JWTs).
 - [Chime](https://github.com/jarohen/chime) for scheduling tasks.
+- In-memory job queues (via Java's BlockingQueues).
 - A minimalist, 15-line dependency injection framework, similar in spirit to Component.
 
 Projects built with Biff:
 
- - [The Sample](https://thesample.ai/), a newsletter recommender system.
- - [Yakread](https://yakread.com/), an ML-driven reader app.
- - [Platypub](https://biffweb.com/p/announcing-platypub/), a blogging + newsletter platform.
+- [The Sample](https://thesample.ai/), a newsletter recommender system.
+- [Yakread](https://yakread.com/), an ML-driven reader app.
+- [Platypub](https://github.com/jacobobryant/platypub), a blogging + newsletter platform.
+
+[About the author](https://tfos.co).

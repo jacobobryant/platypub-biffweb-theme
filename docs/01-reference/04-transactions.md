@@ -44,14 +44,33 @@ writes.
 If you don't set `:xt/id`, Biff will use `(java.util.UUID/randomUUID)` as the default value.
 The default operation is `:xtdb.api/put`.
 
-You can delete a document by setting `:db/op :delete`:
+Biff transactions can also include regular XT operations. Any element of the transaction
+that isn't a map will be considered to be an XT operation:
 
 ```clojure
-(defn delete-message [{:keys [params] :as req}]
-  (biff/submit-tx req
-    [{:xt/id (java.util.UUID/fromString (:msg-id params))
-      :db/op :delete}])
-  ...)
+(biff/submit-tx sys
+  [{:db/doc-type :user
+    :db/op :merge
+    :xt/id (or (biff/lookup-id db :user/email email)
+               (java.util.UUID/randomUUID))
+    :user/email email}
+   [::xt/fn :biff/ensure-unique {:user/email email}]])
+```
+
+If there is contention (e.g. if two concurrent requests attempt to write to
+update the same document, or if a transaction function fails), the transaction
+will be retried up to three times. If you pass a function that returns a transaction,
+then the function will be called again before each retry:
+
+```clojure
+(biff/submit-tx req
+  (fn [{:keys [biff/db]}]
+    [{:db/doc-type :user
+      :db/op :merge
+      :xt/id (or (biff/lookup-id db :user/email email)
+                 (java.util.UUID/randomUUID))
+      :user/email email}
+     [::xt/fn :biff/ensure-unique {:user/email email}]]))
 ```
 
 As a convenience, any occurrences of `:db/now` will be replaced with `(java.util.Date.)`:
@@ -63,6 +82,18 @@ As a convenience, any occurrences of `:db/now` will be replaced with `(java.util
       :msg/user (:uid session)
       :msg/text (:text params)
       :msg/sent-at :db/now}])
+  ...)
+```
+
+## Document operations
+
+You can delete a document by setting `:db/op :delete`:
+
+```clojure
+(defn delete-message [{:keys [params] :as req}]
+  (biff/submit-tx req
+    [{:xt/id (java.util.UUID/fromString (:msg-id params))
+      :db/op :delete}])
   ...)
 ```
 
@@ -80,9 +111,14 @@ cause the transaction to fail if the document doesn't already exist.
   ...)
 ```
 
+There is also a `:db/op :create` operation which is the opposite of
+`:db/op :update`: the transaction will fail if the document *does* exist.
+
 Biff uses `:xtdb.api/match` operations to ensure that concurrent
 merge/update operations don't get overwritten. If the match fails, the
 transaction will be retried up to three times.
+
+## Attribute operations
 
 When `:db/op` is set to `:merge` or `:update`, you can use special operations
 on a per-attribute basis. These operations can use the attribute's previous
@@ -136,6 +172,11 @@ Use `:db/dissoc` to remove an attribute:
   :user/foo :db/dissoc}]
 ```
 
+### `:db/lookup`
+
+*`:db/lookup` is deprecated. It's recommended to use a transaction function*
+*instead, as is done in the example project.*
+
 Finally, you can use `:db/lookup` to enforce uniqueness constraints on attributes
 other than `:xt/id`:
 
@@ -174,10 +215,6 @@ the user document doesn't already exist:
  [:xtdb.api/put {:xt/id {:user/email "hello@example.com"}
                  :db/owned-by #uuid "abc123"}]]
 ```
-
-If you need to do something that `biff/submit-tx` doesn't support (like setting
-a custom valid time or using transaction functions), you can always drop down
-to `xt/submit-tx`.
 
 See also:
 

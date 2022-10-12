@@ -30,7 +30,7 @@ In a new Biff project, the sign-in link will be printed to the console. To have
 it get sent by email, you'll need to include an API key for
 [MailerSend](https://www.mailersend.com/) under the `:mailersend/api-key` key
 in `config.edn`. It's also pretty easy to use a different service like
-[Mailgun](https://www.mailgun.com/) if you prefer.
+[Mailgun](https://www.mailgun.com/) or [Postmark](https://postmarkapp.com/) if you prefer.
 
 Some applications that use email sign-in links are vulnerable to login CSRF,
 wherein an attacker requests a sign-in link for their own account and then
@@ -38,18 +38,6 @@ sends it to the victim. If the victim clicks the link and doesn't notice
 they've been signed into someone else's account, they might reveal private
 information. Biff prevents login CSRF by checking that the link is clicked on
 the same device it was requested from.
-
-It is likely you will need to protect your sign-in form against bots. The
-template project includes backend code for reCAPTCHA v3, which does invisible
-bot detection (i.e. no need to click on pictures of cars; instead Google just
-analyzes your mouse movements etc). See [this
-page](https://developers.google.com/recaptcha/docs/v3) for instructions on
-adding the necessary code to the frontend. You can enable the backend
-verification code by setting `:recaptcha/secret-key` in `config.edn`.
-
-For added protection (and to help catch incorrect user input), you can also use
-an email verification API like
-[Mailgun's](https://documentation.mailgun.com/en/latest/api-email-validation.html).
 
 See also:
 
