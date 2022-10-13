@@ -556,10 +556,10 @@
          :when (not-empty doc)]
      (list
       [:div.flex.items-baseline
-       [:h3 name]
+       [:h3 {:id name} name]
        [:div.flex-grow]
        [:a.text-sm {:href (str "https://github.com/jacobobryant/biff/blob/master/src/com/biffweb.clj#L"
-                               (dec line))}
+                               line)}
         "View source"]]
       [:pre.bg-white {:style {:padding "0"}}
        [:code

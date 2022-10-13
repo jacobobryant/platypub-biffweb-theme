@@ -118,12 +118,29 @@ Biff uses `:xtdb.api/match` operations to ensure that concurrent
 merge/update operations don't get overwritten. If the match fails, the
 transaction will be retried up to three times.
 
+You can use `:db.op/upsert` to update a document with the given attributes,
+or create a new one if doesn't exist yet:
+
+```clojure
+(biff/submit-tx sys
+  [{:db/doc-type :user
+    :db.op/upsert {:user/email "hello@example.com"}
+    :user/joined-at :db/now}])
+```
+
+If the document is created, `:xt/id` will be set to `(random-uuid)`. A transaction function is
+used to make sure the operation is atomic. Besides that, upsert operations work the same as
+`:db/op :merge` operations.
+
+**Note:** You must have installed the `:biff/ensure-unique` transaction function for this
+to work. See [`com.biffweb/tx-fns`](http://localhost:8888/docs/api/xtdb/#tx-fns) (installed
+by default in new projects).
+
 ## Attribute operations
 
-When `:db/op` is set to `:merge` or `:update`, you can use special operations
-on a per-attribute basis. These operations can use the attribute's previous
-value, along with new values you provide, to determine what the final value
-should be.
+Some operations can be used on a per-attribute basis. Often these operations use
+the attribute's previous value, along with new values you provide, to determine
+what the final value should be.
 
 Use `:db/union` to coerce the previous value to a set and insert new values
 with `clojure.set/union`:
@@ -172,10 +189,22 @@ Use `:db/dissoc` to remove an attribute:
   :user/foo :db/dissoc}]
 ```
 
+Use `:db/unique` to ensure that only one document has an attribute with this value:
+
+```clojure
+[{:db/doc-type :user
+  :xt/id #uuid "..."
+  :user/handle [:db/unique "hunter2"]}]
+```
+
+**Note:** You must have installed the `:biff/ensure-unique` transaction function for this
+to work. See [`com.biffweb/tx-fns`](http://localhost:8888/docs/api/xtdb/#tx-fns) (installed
+by default in new projects).
+
 ### `:db/lookup`
 
-*`:db/lookup` is deprecated. It's recommended to use a transaction function*
-*instead, as is done in the example project.*
+**Note:** `:db/lookup` is deprecated. It's recommended to use `:db.op/upsert`
+instead, as is done in the example project.
 
 Finally, you can use `:db/lookup` to enforce uniqueness constraints on attributes
 other than `:xt/id`:
