@@ -245,6 +245,8 @@
     :url "https://github.com/john-shaffer"}
    {:img "https://avatars.githubusercontent.com/u/4767299?v=4"
     :url "https://github.com/jeffp42ker"}
+   {:img "https://avatars.githubusercontent.com/u/23649855?s=200&v=4"
+    :url "https://github.com/Flexiana"}
    {:img "https://avatars.githubusercontent.com/u/9289130?v=4"
     :url "https://github.com/wuuei"}])
 
@@ -252,16 +254,26 @@
   (base-html
     (assoc opts :base/title "You're subscribed to Biff: The Newsletter")
     (navbar opts)
-    [:div.max-w-screen-lg.mx-auto.p-3.w-full
+    [:div.max-w-screen-md.mx-auto.p-3.w-full
      [:h1.font-bold.text-2xl "You're subscribed"]
+     [:div.h-1]
      [:div "Check your inbox for a welcome email."]]))
+
+(defn not-found [opts]
+  (base-html
+    (assoc opts :base/title "Page not found")
+    (navbar opts)
+    [:div.max-w-screen-md.mx-auto.p-3.w-full
+     [:h1.font-bold.text-2xl "Page not found"]
+     [:div.h-1]
+     [:div "Try the " [:a.link {:href "/"} "home page"] " instead."]]))
 
 (defn newsletter-page [{:keys [posts] :as opts}]
   (base-html
     (assoc opts :base/title "Biff: The Newsletter")
     (navbar (assoc opts :class "max-w-screen-sm"))
     (subscribe-form {:bg :light})
-    [:div.bg-gray-200.h-full.flex-grow
+    [:div.bg-gray-100.h-full.flex-grow
      [:div.h-10]
      [:div.text-center.text-2xl "Recent posts"]
      [:div.h-10]
@@ -300,7 +312,7 @@
      [:div.max-w-screen-sm.mx-auto.bg-primary.rounded.text-white.px-3.py-2.code
        [:span.text-blue-400 "# Create a new project:"] [:br]
        "bash <(curl -s https://biffweb.com/new-project.sh)"]]
-    [:div.bg-gray-200.py-5
+    [:div.bg-gray-100.py-5
      [:div.max-w-screen-md.mx-auto.px-2
       [:div.text-lg.md:text-xl.text-center.mx-auto
        {:class "max-w-[520px]"}
@@ -332,7 +344,7 @@
          " (Don't worry, it's optional!)"]]]
       [:div.h-5]
       [:div.md:text-lg.text-center
-       "...and several other carefully chosen pieces. Biff clocks in at under 2,000 lines of code. "
+       "...and several other carefully chosen pieces. Biff is only about 2,000 lines of code. "
        "It's designed to be taken apart and modified, so it doesn't get in the "
        "way as your needs evolve."]
       [:div.h-5]]]
@@ -400,7 +412,8 @@
 (def pages
   {"/" landing-page
    "/newsletter/" newsletter-page
-   "/subscribed/" subscribed-page})
+   "/subscribed/" subscribed-page
+   "/404.html" not-found})
 
 (defn assets!
   "Deprecated"
