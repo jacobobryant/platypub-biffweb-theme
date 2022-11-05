@@ -37,7 +37,7 @@
   }
 
   .post-content img {
-    @apply my-5;
+    @apply my-6;
   }
 
   .post-content li {
@@ -58,6 +58,19 @@
 
   .post-content hr {
     @apply my-8 border-neutral-400;
+  }
+
+  .markdown-body blockquote {
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
+
+  .markdown-body pre {
+    @apply my-6;
+  }
+
+  .codeblock-highlight {
+    @apply text-yellow-300 font-bold;
   }
 }
 
@@ -83,4 +96,13 @@
   background-color: #2d2d2d;
   overflow-x: auto;
   max-width: 100%;
+}
+
+.markdown-body img {
+  box-shadow: 0 0 5px 2px #0000004d;
+  margin: 2rem auto;
+}
+
+.token.inserted {
+  color: #7ec699;
 }

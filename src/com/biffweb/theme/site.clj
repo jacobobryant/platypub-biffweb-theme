@@ -68,12 +68,15 @@
    [:link {:rel "stylesheet" :href "/css/prism.css"}]
    [:link {:rel "stylesheet" :href "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown.min.css"}]
    ;[:link {:rel "stylesheet" :href "/css/vs.css"}]
-   [:script {:src "/js/prism.js"}]))
+   [:script {:src "/js/prism.js"}]
+   
+   ))
 
 (defn base-html [{:keys [dev] :as opts} & body]
   (base-html* (cond-> opts
                 dev (update :base/head concat [[:script {:src "/js/live.js"}]])
-                true (update :base/head concat css))
+                true (update :base/head concat css)
+                )
               body))
 
 (def logo
@@ -104,7 +107,7 @@
    (list
     [:div.bg-primary.py-2
      [:div.flex.mx-auto.items-center.text-white.gap-4.text-lg.flex-wrap.px-3
-      (merge {:class "max-w-screen-md"} opts)
+      (merge {:class "max-w-screen-md"} (select-keys opts [:class]))
       logo
       [:div.flex-grow]
       (for [[label href] (nav-options opts)]
@@ -424,17 +427,27 @@
                        (str/split-lines (:out result))))]
     docs))
 
+(defn bold-code [text state]
+  [(if (:codeblock state)
+     (str/replace text
+                  #"%%(.*)%%"
+                  (fn [[_ text]]
+                    (str "<span class=\"codeblock-highlight\">" text "</span>")))
+     text)
+   state])
+
 (defn read-docs []
   (for [f (file-seq (io/file "docs"))
         :when (.isFile f)
         :let [content (slurp f)
-              [front-matter content] (->> (str/split content #"---")
-                                         (keep (comp not-empty str/trim)))
+              [front-matter content] (->> (str/split content #"---" 3)
+                                          (keep (comp not-empty str/trim)))
               front-matter (yaml/parse-string front-matter)
               content (some-> content
                               (md/md-to-html-string
                                :heading-anchors true
-                               :code-style #(str "class=\"language-" % "\"")))
+                               :code-style #(str "class=\"language-" % "\"")
+                               :custom-transformers [bold-code]))
               md-path (str/replace (.getPath f) "docs/" "")
               path (-> md-path
                        (str/replace #"\d\d-" "")
