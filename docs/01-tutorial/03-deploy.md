@@ -89,7 +89,37 @@ root@biff-tutorial:~# %%bash setup.sh%%
 While `setup.sh` runs, you'll be asked a few questions. For the first few questions,
 you can go with the defaults (i.e. just press `Enter`). When you get to part where
 `setup.sh` tries to provision an SSL certificate for your domain (via the `certbot` command),
-you'll need to enter your domain and answer the other questions appropriately.
+you'll need to enter your domain and answer the other questions appropriately:
+
+```plaintext
++ certbot --nginx
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+Enter email address (used for urgent renewal and security notices)
+ (Enter 'c' to cancel): %%youremail@example.com%%
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Please read the Terms of Service at
+https://letsencrypt.org/documents/LE-SA-v1.3-September-21-2022.pdf. You must
+agree in order to register with the ACME server. Do you agree?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: %%yes%%
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Would you be willing, once your first certificate is successfully issued, to
+share your email address with the Electronic Frontier Foundation, a founding
+partner of the Let's Encrypt project and the non-profit organization that
+develops Certbot? We'd like to send you email about our work encrypting the web,
+EFF news, campaigns, and ways to support digital freedom.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: %%no%%
+Account registered.
+Please enter the domain name(s) you would like on your certificate (comma and/or
+space separated) (Enter 'c' to cancel): %%eelchat.biffweb.com%%
+Requesting a certificate for eelchat.biffweb.com
+
+Successfully received certificate.
+[...]
+```
 
 The entire process should take 5 - 10 minutes. When it's done, run `reboot`.
 
