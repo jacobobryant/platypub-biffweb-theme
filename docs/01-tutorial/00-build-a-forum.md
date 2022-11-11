@@ -3,9 +3,9 @@ title: Build a forum
 ---
 
 To help you learn the ropes, we'll build a discussion application similar to
-Discord, Slack, and the like. We'll call it *Eelchat*.
+Discord, Slack, and the like. We'll call it *eelchat*.
 
-In Eelchat, users can create communities, each of which has a collection of
+In eelchat, users can create communities, each of which has a collection of
 channels. There will be different types of channels:
 
 - Chat, where all the messages are displayed in the same chronological feed.

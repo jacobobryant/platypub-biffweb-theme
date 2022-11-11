@@ -4,11 +4,10 @@ title: Deploy to production
 
 We'll follow the steps in [Reference > Production](https://biffweb.com/docs/reference/production/).
 
-> 1․ Create an Ubuntu VPS in e.g. DigitalOcean.
+> 1․ Create an Ubuntu VPS in e.g. DigitalOcean. Give it at least 1GB of memory.
 
 Create a [Digital Ocean](https://digitalocean.com) account if you don't have one already. Go to the
-[create droplet](https://cloud.digitalocean.com/droplets/new) page. Change the default droplet to something cheaper
-(but with at least 1 GB memory):
+[create droplet](https://cloud.digitalocean.com/droplets/new) page. Change the default droplet to something cheaper:
 
 ![Screenshot of creating a droplet on Digital Ocean](/img/tutorial/do-price.png)
 
@@ -143,7 +142,7 @@ message. Once you see it, you can load the website in your web browser!
 
 ### Sending email
 
-At this stage, when you sign in to Eelchat, it will still print the sign-in
+At this stage, when you sign in to eelchat, it will still print the sign-in
 link to the console instead of emailing it to you. You can get the sign-in link
 for your production app by running `bb logs`.
 

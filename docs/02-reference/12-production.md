@@ -7,7 +7,7 @@ been tested on DigitalOcean. You can of course deploy Biff anywhere that can
 run a JVM&mdash;but if you're happy with the defaults then you can simply
 follow these steps:
 
-1. Create an Ubuntu VPS in e.g. DigitalOcean.
+1. Create an Ubuntu VPS in e.g. DigitalOcean. Give it at least 1GB of memory.
 2. (Optional) If this is an important application, you may want to set up a
    managed Postgres instance and edit `config.edn` to use that for XTDB's
    storage backend instead of the filesystem. With the default standalone
@@ -44,7 +44,7 @@ Some notes:
 
 After you've deployed at least once, you can continue developing the production
 system while it's running. You'll need to install
-[fswatch](https://emcrisostomo.github.io/fswatch/getting.html). (
-`sudo apt install fswatch` on Ubuntu, `brew install fswatch` on Mac.) Then run
+[fswatch](https://emcrisostomo.github.io/fswatch/getting.html).
+(`sudo apt install fswatch` on Ubuntu, `brew install fswatch` on Mac.) Then run
 `bb prod-dev`. Whenever you save a file, it'll get copied to the server and
 evaluated.

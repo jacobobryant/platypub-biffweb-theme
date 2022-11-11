@@ -13,7 +13,7 @@ in, hit the `Sign out` button. You should be redirected to the landing page:
 ![A screenshot of the landing page before any changes are made](/img/tutorial/landing-page-1.png)
 
 We'll update the site metadata first. Go to `com.eelchat.ui` and change the
-application name from `My Application` to `Eelchat`.
+application name from `My Application` to `eelchat`.
 
 ```diff
 diff --git a/src/com/eelchat/ui.clj b/src/com/eelchat/ui.clj
@@ -25,7 +25,7 @@ index 06cb14d..c5017c5 100644
     biff/base-html
     (-> opts
 -       (merge #:base{:title "My Application"
-+       (merge #:base{:title "Eelchat"
++       (merge #:base{:title "eelchat"
                       :lang "en-US"
                       :icon "/img/glider.png"
 -                     :description "My Application Description"
@@ -35,7 +35,7 @@ index 06cb14d..c5017c5 100644
                              (concat [[:link {:rel "stylesheet" :href (css-path)}]
 ```
 
-I've taken the liberty of designing a simple logo for Eelchat. Add the files to your project:
+I've taken the liberty of designing a simple logo for eelchat. Add the files to your project:
 
 ```plaintext
 $ %%cd resources/public/%%
@@ -75,7 +75,7 @@ index c5017c5..67a9347 100644
 +++ b/src/com/eelchat/ui.clj
 @@ -13,13 +13,19 @@
     (-> opts
-        (merge #:base{:title "Eelchat"
+        (merge #:base{:title "eelchat"
                       :lang "en-US"
 -                     :icon "/img/glider.png"
                       :description "The world's finest discussion platform."
@@ -172,7 +172,7 @@ the following implementations:
      "The world's finest discussion platform"]
     [:.h-2]
     [:.sm:text-lg.sm:text-center.w-full
-     "Chat, forums, threads—Eelchat has it all. Coming soon."]
+     "Chat, forums, threads—eelchat has it all. Coming soon."]
     [:.h-6]
     (signin-form sys)
     [:.h-12 {:class "grow-[2]"}]
@@ -220,13 +220,13 @@ index 3a180f7..bb55ce9 100644
  (defn signin-template [{:keys [to url]}]
    {:to to
 -   :subject "Sign in to My Application"
-+   :subject "Join the Eelchat waitlist"
++   :subject "Join the eelchat waitlist"
     :html-body (rum/render-static-markup
                 [:html
                  [:body
 -                 [:p "We received a request to sign in to My Application using this email address."]
 -                 [:p [:a {:href url :target "_blank"} "Click here to sign in."]]
-+                 [:p "We received a request to join Eelchat using this email address."]
++                 [:p "We received a request to join eelchat using this email address."]
 +                 [:p [:a {:href url :target "_blank"} "Click here to join the waitlist."]]
                   [:p "If you did not request this link, you can ignore this email."]]])
     :message-stream "outbound"})
@@ -255,7 +255,7 @@ index 75861f5..2553a2b 100644
       [:.h-6]
 -     [:div "Nothing here yet."])))
 +     [:div "Thanks for joining the waitlist. "
-+      "We'll let you know when Eelchat is ready to use."])))
++      "We'll let you know when eelchat is ready to use."])))
  
  (def features
    {:routes ["/app" {:middleware [mid/wrap-signed-in]}
