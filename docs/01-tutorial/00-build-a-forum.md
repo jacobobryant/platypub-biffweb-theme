@@ -19,3 +19,6 @@ messages). There will some moderation tools; for example, you can require new
 members' posts to be manually approved, you can set the community to be
 invite-only or publicly accessible, etc. There will be RSS feeds for various
 things like channels, communities, and notifications.
+
+All the code for this tutorial can be found at
+[github.com/jacobobryant/eelchat](https://github.com/jacobobryant/eelchat).
