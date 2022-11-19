@@ -5,3 +5,4 @@ input.edn
 netlify
 node_modules
 /public
+.cpcache

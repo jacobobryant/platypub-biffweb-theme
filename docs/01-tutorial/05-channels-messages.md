@@ -190,8 +190,337 @@ If you create multiple channels, you should be able to navigate between them:
 
 ![Screenshot with several channels in the navigation sidebar](/img/tutorial/channels.png)
 
-## Work in progress
+### Delete channels
 
-That's all for now! I've just started writing this tutorial as of
-28 October 2022. I'm planning to have the first draft of it complete by the end of
-November. After the tutorial is complete, I'll make videos to go along with it.
+Next we'll add a delete button for each channel. They'll only be visible if you're an admin.
+Make a new `src/com/eelchat/ui/icons.clj` file, containing the free
+[X icon](https://fontawesome.com/icons/x) from Font Awesome:
+
+```clojure
+(ns com.eelchat.ui.icons)
+
+(def data
+  {:x {:view-box "0 0 384 512", :path "M376.6 84.5c11.3-13.6 9.5-33.8-4.1-45.1s-33.8-9.5-45.1 4.1L192 206 56.6 43.5C45.3 29.9 25.1 28.1 11.5 39.4S-3.9 70.9 7.4 84.5L150.3 256 7.4 427.5c-11.3 13.6-9.5 33.8 4.1 45.1s33.8 9.5 45.1-4.1L192 306 327.4 468.5c11.3 13.6 31.5 15.4 45.1 4.1s15.4-31.5 4.1-45.1L233.7 256 376.6 84.5z"}})
+
+(defn icon [k & [opts]]
+  (let [{:keys [view-box path]} (data k)]
+    [:svg.flex-shrink-0.inline
+     (merge {:xmlns "http://www.w3.org/2000/svg"
+             :viewBox view-box}
+            opts)
+     [:path {:fill "currentColor"
+             :d path}]]))
+```
+
+Then modify `com.eelchat.ui/app-page` so it includes the delete buttons. We'll
+do a little finagling to make the icon vertically aligned. And while we're at
+it, let's fix the community drop-down box so it displays the current community
+correctly when you're on a channel page:
+
+```diff
+diff --git a/src/com/eelchat/ui.clj b/src/com/eelchat/ui.clj
+index 2276dc3..7b1d6bd 100644
+--- a/src/com/eelchat/ui.clj
++++ b/src/com/eelchat/ui.clj
+@@ -1,6 +1,10 @@
+ (ns com.eelchat.ui
+-  (:require [clojure.java.io :as io]
+-            [com.biffweb :as biff :refer [q]]))
++  (:require [cheshire.core :as cheshire]
++            [clojure.java.io :as io]
++            [clojure.string :as str]
++            [com.eelchat.ui.icons :refer [icon]]
++            [com.biffweb :as biff :refer [q]]
++            [ring.middleware.anti-forgery :as anti-forgery]))
+ 
+ (defn css-path []
+   (if-some [f (io/file (io/resource "public/css/main.css"))]
+@@ -52,6 +56,8 @@
+   (base
+    opts
+    [:.flex.bg-orange-50
++    {:hx-headers (cheshire/generate-string
++                  {:x-csrf-token anti-forgery/*anti-forgery-token*})}
+     [:.h-screen.w-80.p-3.pr-0.flex.flex-col.flex-grow
+      [:select
+       {:class '[text-sm
+@@ -66,17 +72,28 @@
+             :let [url (str "/community/" (:xt/id comm))]]
+         [:option.cursor-pointer
+          {:value url
+-          :selected (when (= url uri)
+-                      url)}
++          :selected (when (str/starts-with? uri url)
++                      true)}
+          (:comm/title comm)])]
+      [:.h-4]
+      (for [chan (channels opts)
+-           :let [active (= (:xt/id chan) (:xt/id channel))]]
+-       [:.mt-3 (if active
+-                 [:span.font-bold (:chan/title chan)]
+-                 [:a.link {:href (str "/community/" (:xt/id community)
+-                                      "/channel/" (:xt/id chan))}
+-                  (:chan/title chan)])])
++           :let [active (= (:xt/id chan) (:xt/id channel))
++                 href (str "/community/" (:xt/id community)
++                           "/channel/" (:xt/id chan))]]
++       [:.mt-4.flex.justify-between.leading-none
++        (if active
++          [:span.font-bold (:chan/title chan)]
++          [:a.link {:href href}
++           (:chan/title chan)])
++        (when (contains? roles :admin)
++          [:button.opacity-50.hover:opacity-100.flex.items-center
++           {:hx-delete href
++            :hx-confirm (str "Delete " (:chan/title chan) "?")
++            :hx-target "closest div"
++            :hx-swap "outerHTML"
++            :_ (when active
++                 (str "on htmx:afterRequest set window.location to '/community/" (:xt/id community) "'"))}
++           (icon :x {:class "w-3 h-3"})])])
+      [:.grow]
+      (when (contains? roles :admin)
+        [:<>
+```
+
+The `:hx-headers` value allows us to trigger an htmx request from the button
+element without wrapping it in `biff/form`, which is normally responsible for
+adding the CSRF token to your requests.
+
+After we define the corresponding request handler, our delete buttons will be
+fully functional:
+
+```diff
+diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
+index a184841..9183bd8 100644
+--- a/src/com/eelchat/feat/app.clj
++++ b/src/com/eelchat/feat/app.clj
+@@ -46,6 +46,13 @@
+     {:status 403
+      :body "Forbidden."}))
+ 
++(defn delete-channel [{:keys [channel roles] :as req}]
++  (when (contains? roles :admin)
++    (biff/submit-tx req
++      [{:db/op :delete
++        :xt/id (:xt/id channel)}]))
++  [:<>])
++
+ (defn community [{:keys [biff/db user community] :as req}]
+   (let [member (some (fn [mem]
+                        (= (:xt/id community) (get-in mem [:mem/comm :xt/id])))
+@@ -102,4 +109,5 @@
+              ["/join" {:post join-community}]
+              ["/channel" {:post new-channel}]
+              ["/channel/:chan-id" {:middleware [wrap-channel]}
+-              ["" {:get channel-page}]]]]})
++              ["" {:get channel-page
++                   :delete delete-channel}]]]]})
+```
+
+In this case, `[:<>]` is an easy way to return an empty response
+(see the [Rum docs](https://github.com/tonsky/rum#react-fragment)).
+
+Voila:
+
+![Screen recording of the delete buttons](/img/tutorial/delete-button.gif)
+
+### Messages
+
+Finally, it's time to add the core feature of any discussion app: sending and
+receiving messages. We're going to update the `com.eelchat.ui/channel-page`
+handler so it displays all the messages for the current channel. We'll also add
+a text box where you can enter a new message.
+
+Let's use the REPL to add some messages to our database first so that we'll
+have some data to start out with. Add the following function to `com.eelchat.repl`:
+
+```clojure
+(defn seed-channels []
+  (let [{:keys [biff/db] :as sys} (get-sys)]
+    (biff/submit-tx sys
+      (for [[mem chan] (q db
+                          '{:find [mem chan]
+                            :where [[mem :mem/comm comm]
+                                    [chan :chan/comm comm]]})]
+        {:db/doc-type :message
+         :msg/mem mem
+         :msg/channel chan
+         :msg/created-at :db/now
+         :msg/text (str "Seed message " (rand-int 1000))}))))
+```
+
+This will create one message for each user for each channel they're in. Add
+`(seed-channels)` somewhere inside the `comment` form in that file, then
+evaluate it. To make sure it worked, you can evaluate this query (also in the
+same file):
+
+```clojure
+(let [{:keys [biff/db] :as sys} (get-sys)]
+  (q db
+     '{:find (pull msg [*])
+       :where [[msg :msg/text]]}))
+```
+
+New we can render the messages in `com.eelchat.app/channel-page`:
+
+```clojure
+(defn message-view [{:msg/keys [mem text created-at]}]
+  (let [username (str "User " (subs (str mem) 0 4))]
+    [:div
+     [:.text-sm
+      [:span.font-bold username]
+      [:span.w-2.inline-block]
+      [:span.text-gray-600 (biff/format-date created-at "d MMM h:mm aa")]]
+     [:p.whitespace-pre-wrap.mb-6 text]]))
+
+(defn channel-page [{:keys [biff/db community channel] :as req}]
+  (let [msgs (q db
+                '{:find (pull msg [*])
+                  :in [channel]
+                  :where [[msg :msg/channel channel]]}
+                (:xt/id channel))]
+    (ui/app-page
+     req
+     [:.border.border-neutral-600.p-3.bg-white.grow.flex-1.overflow-y-auto#messages
+      (map message-view (sort-by :msg/created-at msgs))])))
+```
+
+![A screenshot of the app, with messages rendered by channel-page](/img/tutorial/render-messages.png)
+
+Next step is to add the text box for sending messages. To make things a bit more convenient,
+let's update our middleware first. We'll make `wrap-community` add a `:mem` key to the request, set
+to the current user's membership document. We'll need that for the `:msg/mem` key when we create new
+messages.
+
+We'll also tighten the `wrap-channel` middleware so it only gives access to users who have joined
+the community, unless the channel is set to public. (Currently all our channels are set to private.)
+
+```diff
+diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
+index ff55412..473895f 100644
+--- a/src/com/eelchat/feat/app.clj
++++ b/src/com/eelchat/feat/app.clj
+ (defn wrap-community [handler]
+   (fn [{:keys [biff/db user path-params] :as req}]
+     (if-some [community (xt/entity db (parse-uuid (:id path-params)))]
+-      (let [roles (->> (:user/mems user)
+-                       (filter (fn [mem]
+-                                 (= (:xt/id community) (get-in mem [:mem/comm :xt/id]))))
+-                       first
+-                       :mem/roles)]
+-        (handler (assoc req :community community :roles roles)))
++      (let [mem (->> (:user/mems user)
++                     (filter (fn [mem]
++                               (= (:xt/id community) (get-in mem [:mem/comm :xt/id]))))
++                     first)
++            roles (:mem/roles mem)]
++        (handler (assoc req :community community :roles roles :mem mem)))
+       {:status 303
+        :headers {"location" "/app"}})))
+ 
+ (defn wrap-channel [handler]
+-  (fn [{:keys [biff/db user community path-params] :as req}]
++  (fn [{:keys [biff/db user mem community path-params] :as req}]
+     (let [channel (xt/entity db (parse-uuid (:chan-id path-params)))]
+-      (if (= (:chan/comm channel) (:xt/id community))
++      (if (and (= (:chan/comm channel) (:xt/id community))
++               (or mem (= (:chan/access channel) :public)))
+         (handler (assoc req :channel channel))
+         {:status 303
+          :headers {"Location" (str "/community/" (:xt/id community))}}))))
+```
+
+Now we can add the new message text box. We'll use htmx to insert new messages
+into the page without doing a full page reload, and we'll use hyperscript to
+keep the message window scrolled to the bottom whenever there's a new message:
+
+```diff
+diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
+index ff55412..473895f 100644
+--- a/src/com/eelchat/feat/app.clj
++++ b/src/com/eelchat/feat/app.clj
+@@ -85,6 +85,16 @@
+       [:span.text-gray-600 (biff/format-date created-at "d MMM h:mm aa")]]
+      [:p.whitespace-pre-wrap.mb-6 text]]))
+ 
++(defn new-message [{:keys [channel mem params] :as req}]
++  (let [msg {:xt/id (random-uuid)
++             :msg/mem (:xt/id mem)
++             :msg/channel (:xt/id channel)
++             :msg/created-at (java.util.Date.)
++             :msg/text (:text params)}]
++    (biff/submit-tx (assoc req :biff.xtdb/retry false)
++      [(assoc msg :db/doc-type :message)])
++    (message-view msg)))
++
+ (defn channel-page [{:keys [biff/db community channel] :as req}]
+   (let [msgs (q db
+                 '{:find (pull msg [*])
+@@ -93,25 +103,38 @@
+                 (:xt/id channel))]
+     (ui/app-page
+      req
+-     [:.border.border-neutral-600.p-3.bg-white.grow.flex-1.overflow-y-auto#messages
+-      (map message-view (sort-by :msg/created-at msgs))])))
++      [:.border.border-neutral-600.p-3.bg-white.grow.flex-1.overflow-y-auto#messages
++       {:_ "on load or newMessage set my scrollTop to my scrollHeight"}
++       (map message-view (sort-by :msg/created-at msgs))]
++      [:.h-3]
++      (biff/form
++       {:hx-post (str "/community/" (:xt/id community)
++                      "/channel/" (:xt/id channel))
++        :hx-target "#messages"
++        :hx-swap "beforeend"
++        :_ (str "on htmx:afterRequest"
++                " set <textarea/>'s value to ''"
++                " then send newMessage to #messages")
++        :class "flex"}
++       [:textarea.w-full#text {:name "text"}]
++       [:.w-2]
++       [:button.btn {:type "submit"} "Send"]))))
+ 
+@@ -126,4 +149,5 @@
+              ["/channel" {:post new-channel}]
+              ["/channel/:chan-id" {:middleware [wrap-channel]}
+               ["" {:get channel-page
++                   :post new-message
+                    :delete delete-channel}]]]]})
+```
+
+We also used a trick in `new-message` to speed up the response time: We set the
+`:biff.xtdb/retry` option to false. Normally, `biff/submit-tx` will block until
+the submitted transaction is indexed is returned, both so you can "read your
+writes," and so that the transaction can be retried if there was contention
+(for example, if there were two transactions trying to update the same document
+at the same time).
+
+In this case, we know there won't be any contention since we're creating a
+brand new document, so disabling retries means we can send the new message to
+the client immediately after we submit the transaction.
+
+Anyway. Try it out:
+
+![Screenshot of the channel with several messages in it and the new message text box](/img/tutorial/new-message.png)
+
+If you sign in as a second user, you should be able to have both users send
+messages to the same channel. However, you won't see messages from the other
+user unless you do a page refresh. We'll fix that in the next section.
+
+But one last thing before we move on: we need to update our `delete-channel`
+function so that it deletes the channel's messages too.
+
+```clojure
+(defn delete-channel [{:keys [biff/db channel roles] :as req}]
+  (when (contains? roles :admin)
+    (biff/submit-tx req
+      (for [id (conj (q db
+                        '{:find msg
+                          :in [channel]
+                          :where [[msg :msg/chan channel]]}
+                        (:xt/id channel))
+                     (:xt/id channel))]
+        {:db/op :delete
+         :xt/id id})))
+  [:<>])
+```
