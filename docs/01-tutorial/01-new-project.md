@@ -2,6 +2,8 @@
 title: Start a new project
 ---
 
+[View the code for this section](https://github.com/jacobobryant/eelchat/commit/b28580129acabe01857971307be0a73f95ccd823).
+
 As with any Biff project, we'll need to run the new project script. Important
 bits (mainly, stuff you should type) are highlighted in yellow:
 

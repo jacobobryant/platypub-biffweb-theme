@@ -2,6 +2,8 @@
 title: Communities
 ---
 
+[View the code for this section](https://github.com/jacobobryant/eelchat/commit/bfff8fea51520b0b1ee7818865262725943c8d27).
+
 Now that we have our landing page finished and deployed to production,
 let's add all the bare-minimum essential features as quickly as we can.
 This will be mostly CRUD.
@@ -18,18 +20,9 @@ will have at least five types of documents:
 Users can create and join communities. A membership describes the relationship
 between a user and a community: a user will have one membership document for
 each community they're in, which will include things like roles. For example, a
-user who creates a community will have an "admin" role in that community, and
-new users will have to be manually given a "trusted" role by the admin before
-their messages are visible to others in the community.
-
-A community can have multiple channels. A channel can have one of three types:
-chat, forum, or threaded. Each channel can have multiple messages. Messsages can
-have a reference to a "parent" message, for modeling replies. In forum
-channels, any message without a parent is considered a *topic* message, and any
-descendants of that message will be displayed under it in a list. In threaded
-channels, message descendants will be displayed in a hierarchy. In chat
-channels, all messages will be displayed in a single flat list, regardless of
-parent relationships.
+user who creates a community will have an "admin" role in that community. A
+community can have a collection of channels, and each channel can have a
+collection of messages.
 
 Go to `com.eelchat.schema` and change your schema to the following:
 
@@ -39,28 +32,25 @@ Go to `com.eelchat.schema` and change your schema to the following:
    :user    [:map {:closed true}
              [:xt/id          :user/id]
              [:user/email     :string]
-             [:user/joined-at inst?]
-             [:user/handle    {:optional true} :string]]
+             [:user/joined-at inst?]]
 
    :comm/id   :uuid
    :community [:map {:closed true}
-               [:xt/id       :comm/id]
-               [:comm/title  :string]]
+               [:xt/id      :comm/id]
+               [:comm/title :string]]
 
    :mem/id     :uuid
    :membership [:map {:closed true}
                 [:xt/id     :mem/id]
                 [:mem/user  :user/id]
                 [:mem/comm  :comm/id]
-                [:mem/roles [:set [:enum :admin :trusted]]]]
+                [:mem/roles [:set [:enum :admin]]]]
 
    :chan/id :uuid
    :channel [:map {:closed true}
-             [:xt/id       :chan/id]
-             [:chan/title  :string]
-             [:chan/comm   :comm/id]
-             [:chan/type   [:enum :chat :forum :threaded]]
-             [:chan/access [:enum :public :private]]]
+             [:xt/id      :chan/id]
+             [:chan/title :string]
+             [:chan/comm  :comm/id]]
 
    :msg/id  :uuid
    :message [:map {:closed true}
@@ -68,9 +58,7 @@ Go to `com.eelchat.schema` and change your schema to the following:
              [:msg/mem        :mem/id]
              [:msg/text       :string]
              [:msg/channel    :chan/id]
-             [:msg/created-at inst?]
-             [:msg/title      {:optional true} :string]
-             [:msg/parent     {:optional true} :msg/id]]})
+             [:msg/created-at inst?]]})
 ```
 
 As our application develops, we'll inevitably need to add more schema. But this

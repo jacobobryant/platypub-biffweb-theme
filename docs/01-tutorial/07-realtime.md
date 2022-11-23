@@ -2,6 +2,8 @@
 title: Realtime updates
 ---
 
+[View the code for this section](https://github.com/jacobobryant/eelchat/commit/1d436ffdb6238f7632fc3e67d35fb995faea528f).
+
 In this section, we'll use websockets to deliver new messages to other users
 who are in the same channel. htmx has some websocket features that make this
 fairly painless.

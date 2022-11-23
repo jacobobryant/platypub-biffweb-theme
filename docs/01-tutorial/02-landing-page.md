@@ -2,6 +2,8 @@
 title: Make a landing page
 ---
 
+[View the code for this section](https://github.com/jacobobryant/eelchat/commit/e4bb7b9f12a9b1057d02e462dee12dd8061d038d).
+
 Now that we've stripped our app down to the essentials, let's start building it
 back up. For now we'll just do a little branding. The app won't do anything
 yet, but at least you'll have a landing page. You can start collecting emails
@@ -172,7 +174,7 @@ the following implementations:
      "The world's finest discussion platform"]
     [:.h-2]
     [:.sm:text-lg.sm:text-center.w-full
-     "Chat, forums, threads—eelchat has it all. Coming soon."]
+     "Communities, channels, messages, even RSS—eelchat has it all. Coming soon."]
     [:.h-6]
     (signin-form sys)
     [:.h-12 {:class "grow-[2]"}]

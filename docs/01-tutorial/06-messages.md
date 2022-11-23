@@ -2,6 +2,8 @@
 title: Messages
 ---
 
+[View the code for this section](https://github.com/jacobobryant/eelchat/commit/e3a17d6552eb8fc6dfba296edc70ed992a7d4558).
+
 It's finally time to add the core feature of any discussion app: sending and
 receiving messages. We're going to update the `com.eelchat.ui/channel-page`
 handler so it displays all the messages for the current channel. We'll also add
@@ -69,7 +71,7 @@ to the current user's membership document. We'll need that for the `:msg/mem` ke
 messages.
 
 We'll also tighten the `wrap-channel` middleware so it only gives access to users who have joined
-the community, unless the channel is set to public. (Currently all our channels are set to private.)
+the community:
 
 ```diff
 diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
@@ -99,8 +101,7 @@ index ff55412..473895f 100644
 +  (fn [{:keys [biff/db user mem community path-params] :as req}]
      (let [channel (xt/entity db (parse-uuid (:chan-id path-params)))]
 -      (if (= (:chan/comm channel) (:xt/id community))
-+      (if (and (= (:chan/comm channel) (:xt/id community))
-+               (or mem (= (:chan/access channel) :public)))
++      (if (and (= (:chan/comm channel) (:xt/id community)) mem)
          (handler (assoc req :channel channel))
          {:status 303
           :headers {"Location" (str "/community/" (:xt/id community))}}))))

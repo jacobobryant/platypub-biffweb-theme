@@ -2,6 +2,8 @@
 title: Channels
 ---
 
+[View the code for this section](https://github.com/jacobobryant/eelchat/commit/ee08c1c0f12d8d9ff6f8f606cdf6eb9c40426cd7).
+
 Now that users can create and join communities, we're ready to let let
 community admins create and delete channels. We'll start by adding a "New
 channel" button. But first, let's update `com.eelchat.feat.app/wrap-community`
@@ -83,9 +85,7 @@ index 69f3a37..a184841 100644
 +       [{:db/doc-type :channel
 +         :xt/id chan-id
 +         :chan/title (str "Channel #" (rand-int 1000))
-+         :chan/comm (:xt/id community)
-+         :chan/type :chat
-+         :chan/access :private}])
++         :chan/comm (:xt/id community)}])
 +     {:status 303
 +      :headers {"Location" (str "/community/" (:xt/id community) "/channel/" chan-id)}})
 +    {:status 403
