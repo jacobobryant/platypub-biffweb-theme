@@ -13,6 +13,8 @@ Let's use the REPL to add some messages to our database first so that we'll
 have some data to start out with. Add the following function to `com.eelchat.repl`:
 
 ```clojure
+;; src/com/eelchat/repl.clj
+;; ...
 (defn seed-channels []
   (let [{:keys [biff/db] :as sys} (get-sys)]
     (biff/submit-tx sys
@@ -33,15 +35,19 @@ evaluate it. To make sure it worked, you can evaluate this query (also in the
 same file):
 
 ```clojure
-(let [{:keys [biff/db] :as sys} (get-sys)]
-  (q db
-     '{:find (pull msg [*])
-       :where [[msg :msg/text]]}))
+;; src/com/eelchat/repl.clj
+;; ...
+  (let [{:keys [biff/db] :as sys} (get-sys)]
+    (q db
+       '{:find (pull msg [*])
+         :where [[msg :msg/text]]}))
 ```
 
-New we can render the messages in `com.eelchat.app/channel-page`:
+New we can render the messages in `com.eelchat.feat.app/channel-page`:
 
 ```clojure
+;; src/com/eelchat/feat/app.clj
+;; ...
 (defn message-view [{:msg/keys [mem text created-at]}]
   (let [username (str "User " (subs (str mem) 0 4))]
     [:div
@@ -74,10 +80,8 @@ We'll also tighten the `wrap-channel` middleware so it only gives access to user
 the community:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index ff55412..473895f 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
+;; src/com/eelchat/feat/app.clj
+;; ...
  (defn wrap-community [handler]
    (fn [{:keys [biff/db user path-params] :as req}]
      (if-some [community (xt/entity db (parse-uuid (:id path-params)))]
@@ -112,11 +116,8 @@ into the page without doing a full page reload, and we'll use hyperscript to
 keep the message window scrolled to the bottom whenever there's a new message:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index ff55412..473895f 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -85,6 +85,16 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
        [:span.text-gray-600 (biff/format-date created-at "d MMM h:mm aa")]]
       [:p.whitespace-pre-wrap.mb-6 text]]))
  
@@ -133,7 +134,7 @@ index ff55412..473895f 100644
  (defn channel-page [{:keys [biff/db community channel] :as req}]
    (let [msgs (q db
                  '{:find (pull msg [*])
-@@ -93,25 +103,38 @@
+;; ...
                  (:xt/id channel))]
      (ui/app-page
       req
@@ -156,7 +157,7 @@ index ff55412..473895f 100644
 +       [:.w-2]
 +       [:button.btn {:type "submit"} "Send"]))))
  
-@@ -126,4 +149,5 @@
+;; ...
               ["/channel" {:post new-channel}]
               ["/channel/:chan-id" {:middleware [wrap-channel]}
                ["" {:get channel-page
@@ -187,6 +188,8 @@ But one last thing before we move on: we need to update our `delete-channel`
 function so that it deletes the channel's messages too.
 
 ```clojure
+;; src/com/eelchat/feat/app.clj
+;; ...
 (defn delete-channel [{:keys [biff/db channel roles] :as req}]
   (when (contains? roles :admin)
     (biff/submit-tx req

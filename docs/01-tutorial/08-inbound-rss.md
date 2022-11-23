@@ -14,11 +14,8 @@ This will give us an excuse to use Biff's
 First we'll add a `:subscription` document type to our schema:
 
 ```diff
-diff --git a/src/com/eelchat/schema.clj b/src/com/eelchat/schema.clj
-index c4386a2..f625cae 100644
---- a/src/com/eelchat/schema.clj
-+++ b/src/com/eelchat/schema.clj
-@@ -30,6 +30,15 @@
+;; src/com/eelchat/schema.clj
+;; ...
               [:chan/title :string]
               [:chan/comm  :comm/id]]
 
@@ -55,11 +52,8 @@ chat commands and to display new RSS items), so let's add `:system` as a possibl
 the `:msg/mem` key:
 
 ```diff
-diff --git a/src/com/eelchat/schema.clj b/src/com/eelchat/schema.clj
-index f625cae..935f26d 100644
---- a/src/com/eelchat/schema.clj
-+++ b/src/com/eelchat/schema.clj
-@@ -42,7 +42,7 @@
+;; src/com/eelchat/schema.clj
+;; ...
     :msg/id  :uuid
     :message [:map {:closed true}
               [:xt/id          :msg/id]
@@ -74,11 +68,8 @@ We'll need to update our message rendering code to handle the new value. Let's j
 that out of the way now:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index 43c0887..3c6caaa 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -85,7 +85,9 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
          [:div {:class "grow-[1.75]"}]]))))
 
  (defn message-view [{:msg/keys [mem text created-at]}]
@@ -97,11 +88,8 @@ function that returns a transaction representing the result of the command (whic
 be empty if there was no command to execute):
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index 3c6caaa..21b4b93 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -2,6 +2,7 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
    (:require [com.biffweb :as biff :refer [q]]
              [com.eelchat.middleware :as mid]
              [com.eelchat.ui :as ui]
@@ -109,7 +97,7 @@ index 3c6caaa..21b4b93 100644
              [ring.adapter.jetty9 :as jetty]
              [rum.core :as rum]
              [xtdb.api :as xt]))
-@@ -95,14 +96,56 @@
+;; ...
        [:span.text-gray-600 (biff/format-date created-at "d MMM h:mm aa")]]
       [:p.whitespace-pre-wrap.mb-6 text]]))
  
@@ -180,11 +168,8 @@ excerpt from the post and a link.
 Add these dependencies to `deps.edn`:
 
 ```diff
-diff --git a/deps.edn b/deps.edn
-index 9813aef..518b5c1 100644
---- a/deps.edn
-+++ b/deps.edn
-@@ -1,4 +1,6 @@
+;; deps.edn
+;; ...
  {:paths ["src" "resources" "target/resources"]
   :deps {com.biffweb/biff {:git/url "https://github.com/jacobobryant/biff" :sha "9d725ba74514032b3a6f86affe16f8d3c9693135"}
          camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.3"}
@@ -200,6 +185,7 @@ Now create a new namespace `com.eelchat.feat.subscriptions` with the following
 contents:
 
 ```clojure
+;; src/com/eelchat/feat/subscriptions.clj
 (ns com.eelchat.feat.subscriptions
   (:require [com.biffweb :as biff :refer [q]]
             [remus :as remus])
@@ -274,11 +260,8 @@ contents:
 Then register the new namespace in your app:
 
 ```diff
-diff --git a/src/com/eelchat.clj b/src/com/eelchat.clj
-index aa3f490..bfea4db 100644
---- a/src/com/eelchat.clj
-+++ b/src/com/eelchat.clj
-@@ -3,6 +3,7 @@
+;; src/com/eelchat.clj
+;; ...
              [com.eelchat.feat.app :as app]
              [com.eelchat.feat.auth :as auth]
              [com.eelchat.feat.home :as home]
@@ -286,7 +269,7 @@ index aa3f490..bfea4db 100644
              [com.eelchat.schema :refer [malli-opts]]
              [clojure.java.io :as io]
              [clojure.string :as str]
-@@ -14,6 +15,7 @@
+;; ...
  (def features
    [app/features
     auth/features
@@ -322,18 +305,15 @@ away automatically. Let's add another transaction listener that will do just
 that whenever there's a new subscription document:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index e9fb0bb..628611a 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -1,5 +1,6 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
  (ns com.eelchat.feat.app
    (:require [com.biffweb :as biff :refer [q]]
 +            [com.eelchat.feat.subscriptions :as sub]
              [com.eelchat.middleware :as mid]
              [com.eelchat.ui :as ui]
              [clojure.string :as str]
-@@ -206,6 +207,21 @@
+;; ...
              :when (not= mem-id (:msg/mem doc))]
        (jetty/send! client html))))
 
@@ -355,7 +335,7 @@ index e9fb0bb..628611a 100644
  (defn wrap-community [handler]
    (fn [{:keys [biff/db user path-params] :as req}]
      (if-some [community (xt/entity db (parse-uuid (:id path-params)))]
-@@ -240,4 +256,4 @@
+;; ...
                     :post new-message
                     :delete delete-channel}]
                ["/connect" {:get connect}]]]]
@@ -388,11 +368,8 @@ time.
 Add a `:fetch-rss` queue like so:
 
 ```diff
-diff --git a/src/com/eelchat/feat/subscriptions.clj b/src/com/eelchat/feat/subscriptions.clj
-index ea833ca..d5109b1 100644
---- a/src/com/eelchat/feat/subscriptions.clj
-+++ b/src/com/eelchat/feat/subscriptions.clj
-@@ -64,6 +64,12 @@
+;; src/com/eelchat/feat/subscriptions.clj
+;; ...
           (map #(assoc-result sys %))
           (mapcat sub-tx))))
 
@@ -415,11 +392,8 @@ refresh the system to make the change take effect (`com.eelchat.repl` ->
 submit a job:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index 628611a..d8a813f 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -214,9 +214,7 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
              :let [[doc] args]
              :when (and (contains? doc :sub/url)
                         (nil? (xt/entity db-before (:xt/id doc))))]
@@ -439,11 +413,8 @@ like it did before.
 Let's modify our scheduled task to use the queue as well:
 
 ```diff
-diff --git a/src/com/eelchat/feat/subscriptions.clj b/src/com/eelchat/feat/subscriptions.clj
-index d5109b1..c214d26 100644
---- a/src/com/eelchat/feat/subscriptions.clj
-+++ b/src/com/eelchat/feat/subscriptions.clj
-@@ -59,10 +59,8 @@
+;; src/com/eelchat/feat/subscriptions.clj
+;; ...
                  :msg/text (format-post post)}]))))
 
  (defn fetch-rss [{:keys [biff/db] :as sys}]
@@ -463,11 +434,8 @@ We'll fix this by adding a higher priority to jobs for new subscriptions. (The
 default priority is 10, and lower numbers take higher priority.)
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index d8a813f..1db3ca7 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -214,7 +214,7 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
              :let [[doc] args]
              :when (and (contains? doc :sub/url)
                         (nil? (xt/entity db-before (:xt/id doc))))]

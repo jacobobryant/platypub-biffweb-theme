@@ -39,7 +39,7 @@ I'll use `eelchat.biffweb.com` for my domain. Replace that with whatever domain
 you're using:
 
 ```clojure
-; config.edn
+;; config.edn
 {:prod {...
         :biff/base-url "https://eelchat.biffweb.com"
         ...}
@@ -152,6 +152,7 @@ some point if you plan on having users), create a
 and sending identity, add them to your `config.edn` file:
 
 ```clojure
+;; config.edn
 {:prod {...
         :postmark/api-key "..."
         :postmark/from "hello@example.com"

@@ -15,5 +15,5 @@ subscriptions to channels, so new posts will be displayed.
 We'll leave a handful of features unimplemented, so after you finish the tutorial,
 you can get some practice implementing them on your own.
 
-All the code can be found at
-[github.com/jacobobryant/eelchat](https://github.com/jacobobryant/eelchat).
+All the code can be found
+[on GitHub](https://github.com/jacobobryant/eelchat).

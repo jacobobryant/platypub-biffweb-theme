@@ -27,6 +27,8 @@ collection of messages.
 Go to `com.eelchat.schema` and change your schema to the following:
 
 ```clojure
+;; src/com/eelchat/schema.clj
+;; ...
 (def schema
   {:user/id :uuid
    :user    [:map {:closed true}
@@ -67,11 +69,8 @@ should be enough for now; no need to overthink it.
 Head over to `com.eelchat.feat.app` and throw in a "New community" button:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index b47cf3c..655854d 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -17,9 +17,31 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
          "Sign out"])
        "."]
       [:.h-6]
@@ -115,11 +114,8 @@ Let's also tweak the default button style in `resources/tailwind.css` to match e
 branding:
 
 ```diff
-diff --git a/resources/tailwind.css b/resources/tailwind.css
-index 40d96f6..93a6975 100644
---- a/resources/tailwind.css
-+++ b/resources/tailwind.css
-@@ -22,7 +22,7 @@
+;; resources/tailwind.css
+;; ...
 
  @layer components {
    .btn {
@@ -148,18 +144,14 @@ modify `com.eelchat.middleware/wrap-signed-in` so it loads the user's
 memberships (and the associated communities) on each request:
 
 ```diff
-diff --git a/src/com/eelchat/middleware.clj b/src/com/eelchat/middleware.clj
-index 00229ea..4faffc0 100644
---- a/src/com/eelchat/middleware.clj
-+++ b/src/com/eelchat/middleware.clj
-@@ -1,4 +1,5 @@
+;; src/com/eelchat/middleware.clj
 -(ns com.eelchat.middleware)
 +(ns com.eelchat.middleware
 +  (:require [xtdb.api :as xt]))
 
  (defn wrap-redirect-signed-in [handler]
    (fn [{:keys [session] :as req}]
-@@ -8,8 +9,11 @@
+;; ...
        (handler req))))
 
  (defn wrap-signed-in [handler]
@@ -181,11 +173,8 @@ That `xt/pull` call is a little complex; you may want to read up on
 Let's add a `pprint` call to the community page so you can see the result of the query:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index 655854d..1bbdc2c 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -34,7 +34,8 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
      {:status 303
       :headers {"Location" (str "/community/" comm-id)}}))
 
@@ -216,6 +205,8 @@ That gives us everything we need to render the application template.
 Go to `com.eelchat.ui` and add an `app-page` function:
 
 ```clojure
+;; src/com/eelchat/ui.clj
+;; ...
 (defn app-page [{:keys [uri user] :as opts} & body]
   (base
    opts
@@ -255,11 +246,8 @@ Go to `com.eelchat.ui` and add an `app-page` function:
 Then use the new function in `com.eelchat.app`:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index 2453bb8..68df5eb 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -4,22 +4,10 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
              [com.eelchat.ui :as ui]
              [xtdb.api :as xt]))
 
@@ -286,7 +274,7 @@ index 2453bb8..68df5eb 100644
 
  (defn new-community [{:keys [session] :as req}]
    (let [comm-id (random-uuid)]
-@@ -34,12 +22,15 @@
+;; ...
      {:status 303
       :headers {"Location" (str "/community/" comm-id)}}))
 
@@ -322,11 +310,8 @@ Let's have `com.eelchat.feat.app/community` check to see if the current user is
 a member already, and if not, show a join button:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index 68df5eb..6bb846f 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -22,20 +22,49 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
      {:status 303
       :headers {"Location" (str "/community/" comm-id)}}))
  

@@ -18,11 +18,8 @@ We'll update the site metadata first. Go to `com.eelchat.ui` and change the
 application name from `My Application` to `eelchat`.
 
 ```diff
-diff --git a/src/com/eelchat/ui.clj b/src/com/eelchat/ui.clj
-index 06cb14d..c5017c5 100644
---- a/src/com/eelchat/ui.clj
-+++ b/src/com/eelchat/ui.clj
-@@ -11,10 +11,10 @@
+;; src/com/eelchat/ui.clj
+;; ...
    (apply
     biff/base-html
     (-> opts
@@ -71,11 +68,8 @@ $ %%rm eelchat-assets.zip%%
 Then add the appropriate metadata to `ui.clj`:
 
 ```diff
-diff --git a/src/com/eelchat/ui.clj b/src/com/eelchat/ui.clj
-index c5017c5..67a9347 100644
---- a/src/com/eelchat/ui.clj
-+++ b/src/com/eelchat/ui.clj
-@@ -13,13 +13,19 @@
+;; src/com/eelchat/ui.clj
+;; ...
     (-> opts
         (merge #:base{:title "eelchat"
                       :lang "en-US"
@@ -111,10 +105,12 @@ with [RealFaviconGenerator](https://realfavicongenerator.net), using the
 indispensable [HTML To Hiccup](https://htmltohiccup.herokuapp.com/) for conversion—the resulting code
 is shown above in the `:base/head` section.
 
-Now go to `com.eelchat.home`. Replace the `home`, `signin-form` and `recaptcha-disclosure` functions with
+Now go to `com.eelchat.feat.home`. Replace the `home`, `signin-form` and `recaptcha-disclosure` functions with
 the following implementations:
 
 ```clojure
+;; src/com/eelchat/feat/home.clj
+;; ...
 (def recaptcha-disclosure
   [:span "This site is protected by reCAPTCHA and the Google "
    [:a.text-teal-600.hover:underline
@@ -193,11 +189,8 @@ While we're at it, let's make a few tweaks to the rest of the sign-in flow. Chan
 page component (`com.eelchat.ui/page`) so it has the same off-white background as the landing page:
 
 ```diff
-diff --git a/src/com/eelchat/ui.clj b/src/com/eelchat/ui.clj
-index 67a9347..4578b61 100644
---- a/src/com/eelchat/ui.clj
-+++ b/src/com/eelchat/ui.clj
-@@ -32,5 +32,8 @@
+;; src/com/eelchat/ui.clj
+;; ...
  (defn page [opts & body]
    (base
     opts
@@ -213,12 +206,8 @@ index 67a9347..4578b61 100644
 Update some of the wording in `com.eelchat.auth`:
 
 ```diff
-diff --git a/src/com/eelchat/feat/auth.clj b/src/com/eelchat/feat/auth.clj
-index 3a180f7..bb55ce9 100644
---- a/src/com/eelchat/feat/auth.clj
-+++ b/src/com/eelchat/feat/auth.clj
-@@ -22,12 +22,12 @@
- 
+;; src/com/eelchat/feat/auth.clj
+;; ...
  (defn signin-template [{:keys [to url]}]
    {:to to
 -   :subject "Sign in to My Application"
@@ -233,7 +222,7 @@ index 3a180f7..bb55ce9 100644
                   [:p "If you did not request this link, you can ignore this email."]]])
     :message-stream "outbound"})
  
-@@ -98,7 +98,7 @@
+;; ...
  (def signin-sent
    (ui/page
     {}
@@ -247,11 +236,8 @@ index 3a180f7..bb55ce9 100644
 And do the same in `com.eelchat.feat.app`:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index 75861f5..2553a2b 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -17,7 +17,8 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
          "Sign out"])
        "."]
       [:.h-6]

@@ -11,11 +11,8 @@ fairly painless.
 Make sure you're on at least version 1.8.4, then install the websocket extension:
 
 ```diff
-diff --git a/src/com/eelchat/ui.clj b/src/com/eelchat/ui.clj
-index 7b1d6bd..1be949a 100644
---- a/src/com/eelchat/ui.clj
-+++ b/src/com/eelchat/ui.clj
-@@ -21,7 +21,8 @@
+;; src/com/eelchat/ui.clj
+;; ...
                       :image "/img/logo.png"})
         (update :base/head (fn [head]
                              (concat [[:link {:rel "stylesheet" :href (css-path)}]
@@ -35,11 +32,8 @@ websocket example, and we never removed the atom when we started working on
 eelchat), but it contains a set. So let's change it to a map:
 
 ```diff
-diff --git a/src/com/eelchat.clj b/src/com/eelchat.clj
-index 1a902b1..aa3f490 100644
---- a/src/com/eelchat.clj
-+++ b/src/com/eelchat.clj
-@@ -53,7 +53,7 @@
+;; src/com/eelchat.clj
+;; ...
 
  (defn start []
    (biff/start-system
@@ -62,11 +56,8 @@ connection whenever you enter a channel, and we'll throw in a couple `prn`s for
 illustration.
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index ee855ef..ebd0e27 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -106,16 +106,19 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
                  '{:find (pull msg [*])
                    :in [channel]
                    :where [[msg :msg/channel channel]]}
@@ -90,7 +81,7 @@ index ee855ef..ebd0e27 100644
          :hx-target "#messages"
          :hx-swap "beforeend"
          :_ (str "on htmx:afterRequest"
-@@ -126,6 +129,23 @@
+;; ...
         [:.w-2]
         [:button.btn {:type "submit"} "Send"]))))
  
@@ -115,7 +106,7 @@ index ee855ef..ebd0e27 100644
  (defn wrap-community [handler]
    (fn [{:keys [biff/db user path-params] :as req}]
      (if-some [community (xt/entity db (parse-uuid (:id path-params)))]
-@@ -158,4 +178,5 @@
+;; ...
               ["/channel/:chan-id" {:middleware [wrap-channel]}
                ["" {:get channel-page
                     :post new-message
@@ -143,11 +134,8 @@ With the connections in place, we can add a transaction listener that will
 send new messages to all the channel participants:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index c6e102a..43c0887 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -2,6 +2,8 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
    (:require [com.biffweb :as biff :refer [q]]
              [com.eelchat.middleware :as mid]
              [com.eelchat.ui :as ui]
@@ -156,7 +144,7 @@ index c6e102a..43c0887 100644
              [xtdb.api :as xt]))
 
  (defn app [req]
-@@ -146,6 +148,21 @@
+;; ...
                                   (dissoc chat-clients chan-id)
                                   chat-clients)))))}})
 
@@ -178,7 +166,7 @@ index c6e102a..43c0887 100644
  (defn wrap-community [handler]
    (fn [{:keys [biff/db user path-params] :as req}]
      (if-some [community (xt/entity db (parse-uuid (:id path-params)))]
-@@ -179,4 +196,5 @@
+;; ...
                ["" {:get channel-page
                     :post new-message
                     :delete delete-channel}]

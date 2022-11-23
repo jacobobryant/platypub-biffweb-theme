@@ -38,8 +38,8 @@ Other things that Biff wraps/includes:
 
 Projects built with Biff:
 
-- [The Sample](https://thesample.ai/), a newsletter recommender system.
 - [Yakread](https://yakread.com/), an ML-driven reader app.
+- [The Sample](https://thesample.ai/), a newsletter recommender system.
 - [Platypub](https://github.com/jacobobryant/platypub), a blogging + newsletter platform.
 
 [About the author](https://tfos.co).

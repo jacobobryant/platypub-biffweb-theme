@@ -79,11 +79,8 @@ with. But since this is a tutorial, we'll delete most of it and start fresh. Fir
 let's remove the `com.eelchat.feat.worker` namespace. Remove it from `com.eelchat` first:
 
 ```diff
-diff --git a/src/com/eelchat.clj b/src/com/eelchat.clj
-index cc13de8..49d97e6 100644
---- a/src/com/eelchat.clj
-+++ b/src/com/eelchat.clj
-@@ -3,7 +3,6 @@
+;; src/com/eelchat.clj
+;; ...
              [com.eelchat.feat.app :as app]
              [com.eelchat.feat.auth :as auth]
              [com.eelchat.feat.home :as home]
@@ -91,7 +88,7 @@ index cc13de8..49d97e6 100644
              [com.eelchat.schema :refer [malli-opts]]
              [clojure.java.io :as io]
              [clojure.string :as str]
-@@ -15,8 +14,7 @@
+;; ...
  (def features
    [app/features
     auth/features
@@ -147,11 +144,8 @@ Finally, let's update our schema (`com.eelchat.schema`). We'll remove the
 were used by the code in `com.eelchat.feat.app` which we just deleted.
 
 ```diff
-diff --git a/src/com/eelchat/schema.clj b/src/com/eelchat/schema.clj
-index b63d7ee..01fefd1 100644
---- a/src/com/eelchat/schema.clj
-+++ b/src/com/eelchat/schema.clj
-@@ -5,24 +5,10 @@
+;; src/com/eelchat/schema.clj
+;; ...
  (def schema
    {:user/id :uuid
     :user/email :string

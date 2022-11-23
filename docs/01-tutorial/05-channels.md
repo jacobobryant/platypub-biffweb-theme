@@ -10,11 +10,8 @@ channel" button. But first, let's update `com.eelchat.feat.app/wrap-community`
 so it adds the current user's roles to the incoming request:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index 6bb846f..69f3a37 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -55,9 +55,14 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
          [:div {:class "grow-[1.75]"}]]))))
 
  (defn wrap-community [handler]
@@ -36,11 +33,8 @@ Now in `com.eelchat.ui`, we can check if the user has the `:admin` role and show
 if so:
 
 ```diff
-diff --git a/src/com/eelchat/ui.clj b/src/com/eelchat/ui.clj
-index 541d35f..be2dec2 100644
---- a/src/com/eelchat/ui.clj
-+++ b/src/com/eelchat/ui.clj
-@@ -38,7 +38,7 @@
+;; src/com/eelchat/ui.clj
+;; ...
       body]
      [:div {:class "grow-[2]"}]]))
 
@@ -49,7 +43,7 @@ index 541d35f..be2dec2 100644
    (base
     opts
     [:.flex.bg-orange-50
-@@ -60,6 +60,12 @@
+;; ...
                        url)}
           (:comm/title comm)])]
       [:.grow]
@@ -70,11 +64,8 @@ Next we'll add a handler so that the button actually does something. We'll also 
 `channel-page` handler:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index 69f3a37..a184841 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -31,6 +31,21 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
    {:status 303
     :headers {"Location" (str "/community/" (:xt/id community))}})
  
@@ -94,7 +85,7 @@ index 69f3a37..a184841 100644
  (defn community [{:keys [biff/db user community] :as req}]
    (let [member (some (fn [mem]
                         (= (:xt/id community) (get-in mem [:mem/comm :xt/id])))
-@@ -54,6 +69,10 @@
+;; ...
           [:button.btn {:type "submit"} "Join this community"])
          [:div {:class "grow-[1.75]"}]]))))
  
@@ -105,7 +96,7 @@ index 69f3a37..a184841 100644
  (defn wrap-community [handler]
    (fn [{:keys [biff/db user path-params] :as req}]
      (if-some [community (xt/entity db (parse-uuid (:id path-params)))]
-@@ -66,10 +85,21 @@
+;; ...
        {:status 303
         :headers {"location" "/app"}})))
  
@@ -134,11 +125,8 @@ Now let's update `com.eelchat.ui/app-page` so that it displays the channels
 in the sidebar if you're a member of the community:
 
 ```diff
-diff --git a/src/com/eelchat/ui.clj b/src/com/eelchat/ui.clj
-index be2dec2..2276dc3 100644
---- a/src/com/eelchat/ui.clj
-+++ b/src/com/eelchat/ui.clj
-@@ -1,6 +1,6 @@
+;; src/com/eelchat/ui.clj
+;; ...
  (ns com.eelchat.ui
    (:require [clojure.java.io :as io]
 -            [com.biffweb :as biff]))
@@ -146,7 +134,7 @@ index be2dec2..2276dc3 100644
  
  (defn css-path []
    (if-some [f (io/file (io/resource "public/css/main.css"))]
-@@ -38,7 +38,17 @@
+;; ...
       body]
      [:div {:class "grow-[2]"}]]))
  
@@ -165,7 +153,7 @@ index be2dec2..2276dc3 100644
    (base
     opts
     [:.flex.bg-orange-50
-@@ -59,6 +69,14 @@
+;; ...
            :selected (when (= url uri)
                        url)}
           (:comm/title comm)])]
@@ -193,6 +181,7 @@ Make a new `src/com/eelchat/ui/icons.clj` file, containing the free
 [X icon](https://fontawesome.com/icons/x) from Font Awesome:
 
 ```clojure
+;; src/com/eelchat/ui/icons.clj
 (ns com.eelchat.ui.icons)
 
 (def data
@@ -214,11 +203,8 @@ it, let's fix the community drop-down box so it displays the current community
 correctly when you're on a channel page:
 
 ```diff
-diff --git a/src/com/eelchat/ui.clj b/src/com/eelchat/ui.clj
-index 2276dc3..7b1d6bd 100644
---- a/src/com/eelchat/ui.clj
-+++ b/src/com/eelchat/ui.clj
-@@ -1,6 +1,10 @@
+;; src/com/eelchat/ui.clj
+;; ...
  (ns com.eelchat.ui
 -  (:require [clojure.java.io :as io]
 -            [com.biffweb :as biff :refer [q]]))
@@ -231,7 +217,7 @@ index 2276dc3..7b1d6bd 100644
  
  (defn css-path []
    (if-some [f (io/file (io/resource "public/css/main.css"))]
-@@ -52,6 +56,8 @@
+;; ...
    (base
     opts
     [:.flex.bg-orange-50
@@ -240,7 +226,7 @@ index 2276dc3..7b1d6bd 100644
      [:.h-screen.w-80.p-3.pr-0.flex.flex-col.flex-grow
       [:select
        {:class '[text-sm
-@@ -66,17 +72,28 @@
+;; ...
              :let [url (str "/community/" (:xt/id comm))]]
          [:option.cursor-pointer
           {:value url
@@ -287,11 +273,8 @@ After we define the corresponding request handler, our delete buttons will be
 fully functional:
 
 ```diff
-diff --git a/src/com/eelchat/feat/app.clj b/src/com/eelchat/feat/app.clj
-index a184841..9183bd8 100644
---- a/src/com/eelchat/feat/app.clj
-+++ b/src/com/eelchat/feat/app.clj
-@@ -46,6 +46,13 @@
+;; src/com/eelchat/feat/app.clj
+;; ...
      {:status 403
       :body "Forbidden."}))
  
@@ -305,7 +288,7 @@ index a184841..9183bd8 100644
  (defn community [{:keys [biff/db user community] :as req}]
    (let [member (some (fn [mem]
                         (= (:xt/id community) (get-in mem [:mem/comm :xt/id])))
-@@ -102,4 +109,5 @@
+;; ...
               ["/join" {:post join-community}]
               ["/channel" {:post new-channel}]
               ["/channel/:chan-id" {:middleware [wrap-channel]}
