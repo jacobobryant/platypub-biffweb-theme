@@ -268,11 +268,11 @@
      [:div.h-1]
      [:div "Try the " [:a.link {:href "/"} "home page"] " instead."]]))
 
-(defn newsletter-page [{:keys [posts] :as opts}]
+(defn newsletter-page [{:keys [posts account] :as opts}]
   (base-html
     (assoc opts :base/title "Biff: The Newsletter")
     (navbar (assoc opts :class "max-w-screen-sm"))
-    (subscribe-form {:bg :light})
+    (subscribe-form {:bg :light :sitekey (:recaptcha/site account)})
     [:div.bg-gray-100.h-full.flex-grow
      [:div.h-10]
      [:div.text-center.text-2xl "Recent posts"]
