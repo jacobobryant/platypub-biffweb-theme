@@ -1,5 +1,5 @@
 {:paths ["src" "resources"]
  :deps {com.platypub.themes/default {:git/url "https://github.com/jacobobryant/platypub"
-                                     :git/sha "1d645b7e5ab029f5b9bfc4a22dd88ae684c2495b"
+                                     :git/sha "c24d2f82585bd9a285417e98e8ffa997815529aa"
                                      :deps/root "themes/default"}
         markdown-clj/markdown-clj {:mvn/version "1.11.3"}}}
