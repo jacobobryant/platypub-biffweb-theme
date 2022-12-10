@@ -241,6 +241,8 @@
 (def sponsors
   [{:img "https://avatars.githubusercontent.com/u/19023?v=4"
     :url "https://github.com/tbrooke"}
+   {:img "https://avatars.githubusercontent.com/u/54562307?v=4"
+    :url "https://github.com/loganrios"}
    {:img "https://avatars.githubusercontent.com/u/53870456?v=4"
     :url "https://github.com/john-shaffer"}
    {:img "https://avatars.githubusercontent.com/u/4767299?v=4"
@@ -310,8 +312,8 @@
       "Launch new projects quickly without getting bogged down in complexity later."]
      [:div.h-10]
      [:div.max-w-screen-sm.mx-auto.bg-primary.rounded.text-white.px-3.py-2.code
-       [:span.text-blue-400 "# Create a new project:"] [:br]
-       "bash <(curl -s https://biffweb.com/new-project.sh)"]]
+       [:span.text-blue-300 "# Create a new project:"] [:br]
+       "bb -e \"$(curl -s https://biffweb.com/new-project.clj)\""]]
     [:div.bg-gray-100.py-5
      [:div.max-w-screen-md.mx-auto.px-2
       [:div.text-lg.md:text-xl.text-center.mx-auto

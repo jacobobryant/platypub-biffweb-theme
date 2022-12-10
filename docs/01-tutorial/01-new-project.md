@@ -8,8 +8,7 @@ As with any Biff project, we'll need to run the new project script. Important
 bits (mainly, stuff you should type) are highlighted in yellow:
 
 ```plain
-$ %%bash <(curl -s https://biffweb.com/new-project.sh)%%
-Checking out: https://github.com/jacobobryant/biff at 9d725ba74514032b3a6f86affe16f8d3c9693135
+$ %%bb -e "$(curl -s https://biffweb.com/new-project.clj)"%%
 Enter name for project directory: %%eelchat%%
 Enter main namespace (e.g. com.example): %%com.eelchat%%
 
@@ -22,9 +21,10 @@ Your project is ready. Run the following commands to get started:
 And run `bb tasks` for a list of available commands.
 ```
 
-If you're missing some dependencies (like Babashka), you'll instead see an
-error message. After you install any missing dependencies, run the above
-command again and continue:
+You'll need to
+[install Babashka](https://github.com/babashka/babashka#installation) if you
+haven't already. After your project has been created, start up the app with `bb
+dev`:
 
 ```plain
 $ %%cd eelchat/%%
@@ -41,11 +41,6 @@ $ %%git commit -m "First commit"%%
 
 $ %%bb dev%%
 Downloading the latest version of Tailwind CSS...
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-100 38.8M  100 38.8M    0     0  1720k      0  0:00:23  0:00:23 --:--:-- 1806k
 [...]
 [main] INFO com.biffweb.impl.util - %%System started.%%
 [main] INFO com.eelchat - Go to http://localhost:8080

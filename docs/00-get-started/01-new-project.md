@@ -5,14 +5,18 @@ title: Create a project
 Requirements:
 
  - JDK 11 or higher
- - [clj](https://clojure.org/guides/getting_started)
  - [Babashka](https://github.com/babashka/babashka#installation)
 
-Run this command to create a new Biff project (and if you run into any
+Run these commands to create a new Biff project (and if you run into any
 problems, see [Troubleshooting](/docs/reference/troubleshooting/)):
 
 ```bash
-bash <(curl -s https://biffweb.com/new-project.sh)
+# Linux, Mac
+bb -e "$(curl -s https://biffweb.com/new-project.clj)"
+
+# Windows
+Invoke-WebRequest -OutFile new-project.clj -Uri https://biffweb.com/new-project.clj
+bb new-project.clj
 ```
 
 This will create a minimal CRUD app which demonstrates most of Biff's features.
@@ -46,3 +50,11 @@ versions manually in `deps.edn`:
         cider/cider-nrepl {:mvn/version "..."}
 ...
 ```
+
+## Windows
+
+If you're on Windows, I recommend using Biff via WSL2. I do this myself. Plain
+Windows will mostly work, but the `bb prod-dev` command (used for Biff's
+optional develop-in-prod workflow) is unsupported, unless you manaage to
+install `rsync` and `fswatch` somehow. (PRs welcome if you know how to remove
+those dependencies.)

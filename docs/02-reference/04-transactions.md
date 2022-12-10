@@ -85,6 +85,24 @@ As a convenience, any occurrences of `:db/now` will be replaced with `(java.util
   ...)
 ```
 
+Similarly, any keywords with a namespace of `db.id` will be replaced with random UUIDs:
+
+```clojure
+(biff/submit-tx sys
+  [{:db/doc-type :user
+    :xt/id :db.id/bob
+    :user/email "bob@example.com"}
+   {:db/doc-type :msg
+    :msg/user :db.id/bob
+    :msg/text "I am bob"}
+   {:db/doc-type :user
+    :xt/id :db.id/alice
+    :user/email "alice@example.com"}
+   {:db/doc-type :msg
+    :msg/user :db.id/alice
+    :msg/text "I am not bob"}])
+```
+
 ## Document operations
 
 You can delete a document by setting `:db/op :delete`:
