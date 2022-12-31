@@ -218,15 +218,14 @@ Go to `com.eelchat.ui` and add an `app-page` function:
                 focus:border-teal-600
                 focus:ring-teal-600]
        :onchange "window.location = this.value"}
-      [:option {:value "/app"
-                :selected (when (= uri "/app"))}
+      [:option {:value "/app"}
        "Select a community"]
       (for [{:keys [mem/comm]} (:user/mems user)
             :let [url (str "/community/" (:xt/id comm))]]
         [:option.cursor-pointer
          {:value url
           :selected (when (= url uri)
-                      url)}
+                      "selected)}
          (:comm/title comm)])]
      [:.grow]
      (biff/form

@@ -241,16 +241,16 @@
 (def sponsors
   [{:img "https://avatars.githubusercontent.com/u/19023?v=4"
     :url "https://github.com/tbrooke"}
-   {:img "https://avatars.githubusercontent.com/u/54562307?v=4"
-    :url "https://github.com/loganrios"}
-   {:img "https://avatars.githubusercontent.com/u/53870456?v=4"
-    :url "https://github.com/john-shaffer"}
+   {:img "https://avatars.githubusercontent.com/u/193480?v=4"
+    :url "https://github.com/laheadle"}
    {:img "https://avatars.githubusercontent.com/u/4767299?v=4"
     :url "https://github.com/jeffp42ker"}
    {:img "https://avatars.githubusercontent.com/u/23649855?s=200&v=4"
     :url "https://github.com/Flexiana"}
-   {:img "https://avatars.githubusercontent.com/u/9289130?v=4"
-    :url "https://github.com/wuuei"}])
+   {:img "https://avatars.githubusercontent.com/u/53870456?v=4"
+    :url "https://github.com/john-shaffer"}
+   {:img "https://avatars.githubusercontent.com/u/54562307?v=4"
+    :url "https://github.com/loganrios"}])
 
 (defn subscribed-page [opts]
   (base-html
