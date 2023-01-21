@@ -2,7 +2,7 @@
 title: Production
 ---
 
-Biff comes with a script (`setup.sh`) for setting up an Ubuntu server. It's
+Biff comes with a script (`server-setup.sh`) for setting up an Ubuntu server. It's
 been tested on DigitalOcean. You can of course deploy Biff anywhere that can
 run a JVM&mdash;but if you're happy with the defaults then you can simply
 follow these steps:
@@ -16,10 +16,10 @@ follow these steps:
 3. Edit `config.edn` and set `:biff.tasks/server` to the domain you'd like to
    use for your app. For now we'll assume you're using `example.com`. Also
    update `:biff/base-url`. If you use `main` instead of `master` as your
-   default branch, update `:biff.tasks/deploy-from`.
+   default branch, update `:biff.tasks/deploy-cmd`.
 4. Set an A record on `example.com` that points to your Ubuntu server.
-5. Make sure you can ssh into the server, then run `scp setup.sh root@example.com:`.
-6. Run `ssh root@example.com`, then `bash setup.sh`. After it finishes, run `reboot`.
+5. Make sure you can ssh into the server, then run `scp server-setup.sh root@example.com:`.
+6. Run `ssh root@example.com`, then `bash server-setup.sh`. After it finishes, run `reboot`.
 7. On your local machine, run `git remote add prod ssh://app@example.com/home/app/repo.git`.
 
 Now you can deploy your application anytime by committing your code and then
@@ -31,7 +31,7 @@ Some notes:
 
  - See `bb tasks` for a list of other production-related commands, such as `bb prod-dev`.
  - If you need to make changes to the server (e.g. perhaps you need to install
-   an additional package), be sure to update `setup.sh` so you can always
+   an additional package), be sure to update `server-setup.sh` so you can always
    easily provision a new server from scratch.
  - Biff is organized so you can easily split up your application into a web
    server(s) and a worker(s), although there are no step-by-step instructions

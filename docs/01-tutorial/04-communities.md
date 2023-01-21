@@ -225,7 +225,7 @@ Go to `com.eelchat.ui` and add an `app-page` function:
         [:option.cursor-pointer
          {:value url
           :selected (when (= url uri)
-                      "selected)}
+                      "selected")}
          (:comm/title comm)])]
      [:.grow]
      (biff/form
@@ -314,8 +314,6 @@ a member already, and if not, show a join button:
      {:status 303
       :headers {"Location" (str "/community/" comm-id)}}))
  
--(defn community [{:keys [biff/db path-params] :as req}]
--  (if (some? (xt/entity db (parse-uuid (:id path-params))))
 +(defn join-community [{:keys [user community] :as req}]
 +  (biff/submit-tx req
 +    [{:db/doc-type :membership
@@ -325,6 +323,8 @@ a member already, and if not, show a join button:
 +  {:status 303
 +   :headers {"Location" (str "/community/" (:xt/id community))}})
 +
+-(defn community [{:keys [biff/db path-params] :as req}]
+-  (if (some? (xt/entity db (parse-uuid (:id path-params))))
 +(defn community [{:keys [biff/db user community] :as req}]
 +  (let [member (some (fn [mem]
 +                       (= (:xt/id community) (get-in mem [:mem/comm :xt/id])))

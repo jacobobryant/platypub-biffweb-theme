@@ -102,10 +102,11 @@ Some tips for any fellow non-graphic-designers: I made the logo with
 [MyFonts](https://www.myfonts.com/), and
 [Tailwind's color pallete](https://tailwindcss.com/docs/customizing-colors). Then I generated some icons
 with [RealFaviconGenerator](https://realfavicongenerator.net), using the
-indispensable [HTML To Hiccup](https://htmltohiccup.herokuapp.com/) for conversion—the resulting code
-is shown above in the `:base/head` section.
+indispensable [HTML To Hiccup](https://htmltohiccup.herokuapp.com/)
+(RIP—use [html2hicuup](http://html2hiccup.buttercloud.com/) instead)
+for conversion—the resulting code is shown above in the `:base/head` section.
 
-Now go to `com.eelchat.feat.home`. Replace the `home`, `signin-form` and `recaptcha-disclosure` functions with
+Now go to `com.eelchat.feat.home`. Replace the `recaptcha-disclosure` and `signin-form` functions with
 the following implementations:
 
 ```clojure
@@ -155,9 +156,13 @@ the following implementations:
                w-full
                g-recaptcha]})
     "Join the waitlist"]))
+```
 
-; ...
+And then replace the `home` function with this:
 
+```clojure
+;; src/com/eelchat/feat/home.clj
+;; ...
 (defn home [sys]
   (ui/base
    {:base/head (when (util/email-signin-enabled? sys)

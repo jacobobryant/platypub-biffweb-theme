@@ -142,7 +142,7 @@
       {:class (if card
                 "text-[2.5rem]"
                 "text-blue-600")
-       :href "https://jacobobryant.com/"
+       :href "https://tfos.co/"
        :target "_blank"}
       "Jacob O'Bryant"]]
     [:div {:class (if card "text-[2.2rem]" "text-[90%]")
@@ -331,7 +331,8 @@
        [:div.bg-white.p-3.rounded
         [:div.font-bold [:a.link {:href "https://htmx.org/" :target "_blank"} "htmx"]]
         [:div.h-1]
-        "Create interactive, real-time applications with HTML instead of JavaScript. Throw in a dash of "
+        "Create rich, interactive UIs without leaving the backend. "
+        "Throw in a dash of "
         [:a.link {:href "https://hyperscript.org/" :target "_blank"} "hyperscript"]
         " for light frontend scripting."]
        [:div.bg-white.p-3.rounded
@@ -408,7 +409,7 @@
   (base-html
    opts
    (navbar opts)
-   [:div.mx-auto.p-3.text-lg.flex-grow.w-full.max-w-screen-md
+   [:div.mx-auto.px-3.pb-3.text-lg.flex-grow.w-full.max-w-screen-md
     [:div.post-content (raw-string (:html page))]]))
 
 (def pages

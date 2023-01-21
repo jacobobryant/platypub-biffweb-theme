@@ -23,8 +23,8 @@ And run `bb tasks` for a list of available commands.
 
 You'll need to
 [install Babashka](https://github.com/babashka/babashka#installation) if you
-haven't already. After your project has been created, start up the app with `bb
-dev`:
+haven't already. After your project has been created, start up the app with
+`bb dev`:
 
 ```plain
 $ %%cd eelchat/%%

@@ -43,7 +43,7 @@ same file):
          :where [[msg :msg/text]]}))
 ```
 
-New we can render the messages in `com.eelchat.feat.app/channel-page`:
+Now we can render the messages in `com.eelchat.feat.app/channel-page`:
 
 ```clojure
 ;; src/com/eelchat/feat/app.clj
@@ -167,7 +167,7 @@ keep the message window scrolled to the bottom whenever there's a new message:
 
 We also used a trick in `new-message` to speed up the response time: We set the
 `:biff.xtdb/retry` option to false. Normally, `biff/submit-tx` will block until
-the submitted transaction is indexed is returned, both so you can "read your
+the submitted transaction is indexed, both so you can "read your
 writes," and so that the transaction can be retried if there was contention
 (for example, if there were two transactions trying to update the same document
 at the same time).

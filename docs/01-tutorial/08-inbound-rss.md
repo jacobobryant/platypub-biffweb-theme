@@ -178,6 +178,9 @@ Add these dependencies to `deps.edn`:
          org.slf4j/slf4j-simple {:mvn/version "2.0.0-alpha5"}}}
 ```
 
+(Sometimes dependencies can be added automatically, but in this case you'll
+need to hit Ctrl-C and run `bb dev` again.)
+
 We'll use Remus to fetch and parse the RSS feeds, and we'll use jsoup to
 convert the posts' HTML content to plain text for our excerpts.
 
@@ -394,6 +397,10 @@ submit a job:
 ```diff
 ;; src/com/eelchat/feat/app.clj
 ;; ...
+ (defn on-new-subscription [{:keys [biff.xtdb/node] :as sys} tx]
+   (let [db-before (xt/db node {::xt/tx-id (dec (::xt/tx-id tx))})]
+     (doseq [[op & args] (::xt/tx-ops tx)
+             :when (= op ::xt/put)
              :let [[doc] args]
              :when (and (contains? doc :sub/url)
                         (nil? (xt/entity db-before (:xt/id doc))))]

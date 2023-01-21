@@ -33,7 +33,7 @@ preferably use their managed Postgres offering.
 > 3․ Edit `config.edn` and set `:biff.tasks/server` to the domain you'd like to use
 > for your app. For now we'll assume you're using `example.com`. Also update
 > `:biff/base-url`. If you use main instead of master as your default branch,
-> update `:biff.tasks/deploy-from`.
+> update `:biff.tasks/deploy-cmd`.
 
 I'll use `eelchat.biffweb.com` for my domain. Replace that with whatever domain
 you're using:
@@ -58,36 +58,36 @@ I'm using the `eelchat.biffweb.com` subdomain:
 
 ![Screenshot of creating a DNS record on Digital Ocean](/img/tutorial/do-dns.png)
 
-> 5․ Make sure you can ssh into the server, then run `scp setup.sh root@example.com:`.
+> 5․ Make sure you can ssh into the server, then run `scp server-setup.sh root@example.com:`.
 
 Go ahead and run the command:
 
 ```plaintext
-$ %%scp setup.sh root@eelchat.biffweb.com:%%
+$ %%scp server-setup.sh root@eelchat.biffweb.com:%%
 The authenticity of host 'eelchat.biffweb.com (164.92.125.199)' can't be established.
 ECDSA key fingerprint is SHA256:BKnRyRjJlwsQTWi9ktWVz2gQz7sLBa2vuB4dNghFlGI.
 Are you sure you want to continue connecting (yes/no/[fingerprint])? %%yes%%
 Warning: Permanently added 'eelchat.biffweb.com,164.92.125.199' (ECDSA) to the list of known hosts.
-setup.sh                                           100% 3278    50.3KB/s   00:00
+server-setup.sh                                    100% 3278    50.3KB/s   00:00
 ```
 
-> 6․ Run `ssh root@example.com`, then `bash setup.sh`. After it finishes, run `reboot`.
+> 6․ Run `ssh root@example.com`, then `bash server-setup.sh`. After it finishes, run `reboot`.
 
 ```plaintext
 $ %%ssh root@eelchat.biffweb.com%%
 Welcome to Ubuntu 22.10 (GNU/Linux 5.19.0-23-generic x86_64)
 [...]
 
-root@biff-tutorial:~# %%bash setup.sh%%
+root@biff-tutorial:~# %%bash server-setup.sh%%
 + set -e
 + BIFF_ENV=prod
 + CLJ_VERSION=1.11.1.1165
 [...]
 ```
 
-While `setup.sh` runs, you'll be asked a few questions. For the first few questions,
+While `server-setup.sh` runs, you'll be asked a few questions. For the first few questions,
 you can go with the defaults (i.e. just press `Enter`). When you get to part where
-`setup.sh` tries to provision an SSL certificate for your domain (via the `certbot` command),
+`server-setup.sh` tries to provision an SSL certificate for your domain (via the `certbot` command),
 you'll need to enter your domain and answer the other questions appropriately:
 
 ```plaintext
@@ -120,7 +120,7 @@ Successfully received certificate.
 [...]
 ```
 
-The entire process should take 5 - 10 minutes. When it's done, run `reboot`.
+The entire process should take under 5 minutes. When it's done, run `reboot`.
 
 > 7․ On your local machine, run `git remote add prod ssh://app@example.com/home/app/repo.git`.
 
@@ -138,7 +138,8 @@ $ %%bb deploy%%
 ```
 
 After the command finishes, run `bb logs` and look for the `System started`
-message. Once you see it, you can load the website in your web browser!
+message. This part may take a minute or so. Once you see it, you can load the
+website in your web browser!
 
 ### Sending email
 
@@ -149,14 +150,36 @@ for your production app by running `bb logs`.
 If you'd like to actually send the link via email (which you'll need to do at
 some point if you plan on having users), create a
 [Postmark](https://postmarkapp.com/) account. Once you have a Postmark API key
-and sending identity, add them to your `config.edn` file:
+and sending identity, add them to your `config.edn` and `secrets.env` files. 
 
 ```clojure
 ;; config.edn
 {:prod {...
-        :postmark/api-key "..."
         :postmark/from "hello@example.com"
         ...
 ```
 
-Then run `bb soft-deploy; bb refresh` to make the config change take effect.
+```bash
+# secrets.env
+...
+export POSTMARK_API_KEY=...
+```
+
+Then register your site with [reCAPTCHA](https://www.google.com/recaptcha/admin/). Select 
+v2 Invisible for the reCAPTCHA type. Add your domain and `localhost` to the
+allowed domains. Then add your credentials to `config.edn` and `secrets.env`:
+
+```clojure
+;; config.edn
+{:prod {...
+        :recaptcha/site-key "..."
+        ...
+```
+
+```bash
+# secrets.env
+...
+export RECAPTCHA_SECRET_KEY=...
+```
+
+Then run `bb soft-deploy; bb restart` to make the config change take effect.

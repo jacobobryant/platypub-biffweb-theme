@@ -23,12 +23,14 @@ namespace when creating your project.)
 ├── config.edn
 ├── deps.edn
 ├── resources
+│   ├── fixtures.edn
 │   ├── public
 │   │   └── img
 │   │       └── glider.png
 │   ├── tailwind.config.js
 │   └── tailwind.css
-├── setup.sh
+├── secrets.env
+├── server-setup.sh
 ├── src
 │   └── com
 │       ├── example
@@ -52,10 +54,11 @@ namespace when creating your project.)
                 └── tasks.clj
 ```
 
-`config.edn` contains configuration (including secrets) for the application and
-is not checked into git. `setup.sh` is a script for provisioning an Ubuntu
-server (see [Production](/docs/reference/production/)). `bb.edn` defines project
-tasks&mdash;run `bb tasks` to see the available commands.
+`config.edn` and `secrets.env` contain your app's configuration and secrets,
+respectively, and are not checked into git. `server-setup.sh` is a script for
+provisioning an Ubuntu server (see [Production](/docs/reference/production/)).
+`bb.edn` defines project tasks&mdash;run `bb tasks` to see the available
+commands.
 
 ## Code organization
 

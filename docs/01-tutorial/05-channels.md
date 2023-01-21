@@ -4,7 +4,7 @@ title: Channels
 
 [View the code for this section](https://github.com/jacobobryant/eelchat/commit/ee08c1c0f12d8d9ff6f8f606cdf6eb9c40426cd7).
 
-Now that users can create and join communities, we're ready to let let
+Now that users can create and join communities, we're ready to let
 community admins create and delete channels. We'll start by adding a "New
 channel" button. But first, let's update `com.eelchat.feat.app/wrap-community`
 so it adds the current user's roles to the incoming request:
@@ -59,6 +59,9 @@ if so:
 ```
 
 ![Screenshot of the "New channel" button](/img/tutorial/new-channel-button.png)
+
+(If the button doesn't show up, you may need to sign back into the account that
+created this community.)
 
 Next we'll add a handler so that the button actually does something. We'll also add a dummy
 `channel-page` handler:
@@ -138,7 +141,6 @@ in the sidebar if you're a member of the community:
       body]
      [:div {:class "grow-[2]"}]]))
  
--(defn app-page [{:keys [uri user community roles] :as opts} & body]
 +(defn channels [{:keys [biff/db community roles]}]
 +  (when (some? roles)
 +    (sort-by
@@ -149,6 +151,7 @@ in the sidebar if you're a member of the community:
 +          :where [[channel :chan/comm comm]]}
 +        (:xt/id community)))))
 +
+-(defn app-page [{:keys [uri user community roles] :as opts} & body]
 +(defn app-page [{:keys [biff/db uri user community roles channel] :as opts} & body]
    (base
     opts
@@ -215,9 +218,8 @@ correctly when you're on a channel page:
 +            [com.biffweb :as biff :refer [q]]
 +            [ring.middleware.anti-forgery :as anti-forgery]))
  
- (defn css-path []
-   (if-some [f (io/file (io/resource "public/css/main.css"))]
 ;; ...
+(defn app-page [{:keys [biff/db uri user community roles channel] :as opts} & body]
    (base
     opts
     [:.flex.bg-orange-50
@@ -233,19 +235,19 @@ correctly when you're on a channel page:
 -          :selected (when (= url uri)
 -                      url)}
 +          :selected (when (str/starts-with? uri url)
-+                      true)}
++                      "selected")}
           (:comm/title comm)])]
       [:.h-4]
       (for [chan (channels opts)
 -           :let [active (= (:xt/id chan) (:xt/id channel))]]
++           :let [active (= (:xt/id chan) (:xt/id channel))
++                 href (str "/community/" (:xt/id community)
++                           "/channel/" (:xt/id chan))]]
 -       [:.mt-3 (if active
 -                 [:span.font-bold (:chan/title chan)]
 -                 [:a.link {:href (str "/community/" (:xt/id community)
 -                                      "/channel/" (:xt/id chan))}
 -                  (:chan/title chan)])])
-+           :let [active (= (:xt/id chan) (:xt/id channel))
-+                 href (str "/community/" (:xt/id community)
-+                           "/channel/" (:xt/id chan))]]
 +       [:.mt-4.flex.justify-between.leading-none
 +        (if active
 +          [:span.font-bold (:chan/title chan)]

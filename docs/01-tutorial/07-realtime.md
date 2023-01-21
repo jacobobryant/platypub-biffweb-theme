@@ -58,6 +58,8 @@ illustration.
 ```diff
 ;; src/com/eelchat/feat/app.clj
 ;; ...
+ (defn channel-page [{:keys [biff/db community channel] :as req}]
+   (let [msgs (q db
                  '{:find (pull msg [*])
                    :in [channel]
                    :where [[msg :msg/channel channel]]}
@@ -166,6 +168,9 @@ send new messages to all the channel participants:
  (defn wrap-community [handler]
    (fn [{:keys [biff/db user path-params] :as req}]
      (if-some [community (xt/entity db (parse-uuid (:id path-params)))]
+;; ...
+ (def features
+   {:routes ["" {:middleware [mid/wrap-signed-in]}
 ;; ...
                ["" {:get channel-page
                     :post new-message
